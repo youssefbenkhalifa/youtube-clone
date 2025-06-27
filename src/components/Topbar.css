@@ -1,0 +1,108 @@
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  height: 56px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  background-color: white;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.menu-button {
+  font-size: 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.menu-button:hover {
+  background-color: #f1f1f1;
+}
+
+.youtube-logo {
+  height: 20px;
+  object-fit: contain;
+  cursor: pointer;
+  margin-left: 50px;
+}
+
+.topbar-center {
+  display: flex;
+  flex: 1;
+  max-width: 600px;
+  margin: 0 24px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-right: none;
+  border-radius: 2px 0 0 2px;
+  font-size: 14px;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: #065fd4;
+}
+
+.search-button {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-left: none;
+  background-color: #f8f8f8;
+  cursor: pointer;
+  border-radius: 0 2px 2px 0;
+  transition: background-color 0.2s;
+}
+
+.search-button:hover {
+  background-color: #f0f0f0;
+}
+
+.search-button:hover svg path {
+  fill: red;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.topbar-icon {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  fill: #606060;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.topbar-icon:hover {
+  background-color: #f1f1f1;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  background-color: #ccc;
+  border-radius: 50%;
+  cursor: pointer;
+}
