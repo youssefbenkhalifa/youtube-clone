@@ -24,7 +24,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "dev": "concurrently \"npm run start\" \"cd backend && node server.js\""
   },
   "eslintConfig": {
     "extends": [
@@ -56,5 +57,8 @@
   "bugs": {
     "url": "https://github.com/youssefbenkhalifa/youtube-clone/issues"
   },
-  "homepage": "."
+  "homepage": ".",
+  "devDependencies": {
+    "concurrently": "^9.2.0"
+  }
 }

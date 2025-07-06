@@ -1,91 +1,74 @@
 import React, { useState } from 'react';
+import './login.css';
 
 export default function Login({ onLoginSuccess, onSwitchToSignup }) {
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [message, setMessage] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleChange = e => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
+    setError('');
     try {
       const res = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+        body: JSON.stringify({ email, password }),
       });
-
       const data = await res.json();
-      if (res.ok) {
+      if (!res.ok) throw new Error(data.msg || 'Login failed');
+
+      if (remember) {
         localStorage.setItem('token', data.token);
-        onLoginSuccess(data.user);
       } else {
-        setMessage(`❌ ${data.message}`);
+        sessionStorage.setItem('token', data.token);
       }
+
+      onLoginSuccess(data.user);
     } catch (err) {
-      setMessage('❌ Something went wrong.');
+      setError(err.message);
     }
   };
 
   return (
-    <div style={styles.container}>
-      <img src="/images/youtube-logo.png" alt="YouTube" style={styles.logo} />
-      <h2 style={styles.title}>Sign in to YouTube</h2>
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <input name="email" placeholder="Email" type="email" value={form.email} onChange={handleChange} required />
-        <input name="password" placeholder="Password" type="password" value={form.password} onChange={handleChange} required />
-        <button type="submit">Log In</button>
+    <div className="auth-container">
+      <img src="/images/youtube-logo.png" alt="YouTube" className="auth-logo" />
+      <h2>Login</h2>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+
+        <label>
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={(e) => setRemember(e.target.checked)}
+          />
+          Remember Me
+        </label>
+
+        <button type="submit">Login</button>
       </form>
-      <p style={styles.message}>{message}</p>
+      {error && <p className="error">{error}</p>}
       <p>
-        Don't have an account?{' '}
-        <button onClick={onSwitchToSignup} style={styles.linkButton}>Sign Up</button>
+        Don’t have an account?{' '}
+        <button type="button" onClick={onSwitchToSignup}>
+          Sign Up
+        </button>
       </p>
     </div>
   );
 }
-
-const styles = {
-  container: {
-    padding: '40px',
-    maxWidth: '400px',
-    margin: '60px auto',
-    border: '1px solid #ddd',
-    borderRadius: '8px',
-    background: '#fff',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    fontFamily: 'Roboto, sans-serif',
-    textAlign: 'center'
-  },
-  logo: {
-    height: '40px',
-    marginBottom: '20px'
-  },
-  title: {
-    fontWeight: '500',
-    marginBottom: '20px',
-    fontSize: '18px'
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-    marginBottom: '20px'
-  },
-  message: {
-    color: '#444',
-    minHeight: '24px'
-  },
-  linkButton: {
-    border: 'none',
-    background: 'none',
-    color: '#065fd4',
-    cursor: 'pointer',
-    textDecoration: 'underline',
-    fontSize: '14px'
-  }
-};
-    
