@@ -1,7 +1,6 @@
 .video-watch-container {
   padding: 20px;
   max-width: 1280px;
-  margin: 0 auto;
 }
 
 .video-not-found {
@@ -471,6 +470,7 @@
 @media (max-width: 1000px) {
   .video-content {
     flex-direction: column;
+
   }
   
   .recommended-sidebar {
