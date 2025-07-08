@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './App.css';
 
 import Sidebar from './components/Sidebar';
@@ -13,40 +13,14 @@ import History from './components/History';
 import YourVideos from './components/YourVideos';
 import WatchLater from './components/WatchLater';
 import LikedVideos from './components/LikedVideos';
-import Login from './components/login';
-import Signup from './components/signup';
-import EditChannel from './components/EditChannel';
+import YouTubeStudio from './components/YouTubeStudio';
 
 export default function App() {
-  const [user, setUser] = useState(null);
-  const [view, setView] = useState('login');
   const [currentView, setCurrentView] = useState('home');
   const [currentChannel, setCurrentChannel] = useState(null);
   const [currentVideo, setCurrentVideo] = useState(null);
-
-  // ✅ Remember Me: Try to load user from localStorage token on first load
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      fetch('http://localhost:5000/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.user) {
-            setUser(data.user);
-            setView('main');
-          } else {
-            setUser(null);
-            setView('login');
-          }
-        })
-        .catch(() => {
-          setUser(null);
-          setView('login');
-        });
-    }
-  }, []);
+  const [isStudioOpen, setIsStudioOpen] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
   const handleChannelClick = (channelName) => {
     setCurrentChannel(channelName);
@@ -63,6 +37,16 @@ export default function App() {
     setCurrentView(view);
     setCurrentChannel(null);
     setCurrentVideo(null);
+  };
+
+  const handleStudioOpen = (withUpload = false) => {
+    setIsStudioOpen(true);
+    setShowUploadModal(withUpload);
+  };
+
+  const handleStudioClose = () => {
+    setIsStudioOpen(false);
+    setShowUploadModal(false);
   };
 
   const renderMainContent = () => {
@@ -99,66 +83,31 @@ export default function App() {
             onHomeClick={() => handleNavigate('home')}
           />
         );
-      case 'edit-channel':
-        return (
-          <EditChannel 
-            user={user}
-            onUpdate={(updatedUser) => {
-              setUser(updatedUser);
-              setCurrentView('home');
-            }}
-          />
-        );
       case 'home':
       default:
         return <VideoGrid onChannelClick={handleChannelClick} onVideoClick={handleVideoClick} />;
     }
   };
 
-  if (!user) {
-    return view === 'signup' ? (
-      <Signup 
-        onLoginSuccess={(user) => {
-          setUser(user);
-          setView('main');
-        }}
-        onSwitchToLogin={() => setView('login')}
-      />
-    ) : (
-      <Login 
-        onLoginSuccess={(user) => {
-          setUser(user);
-          setView('main');
-        }}
-        onSwitchToSignup={() => setView('signup')}
-      />
-    );
-  }
-
   return (
     <div className="app">
-      <Sidebar onNavigate={handleNavigate} currentView={currentView} />
-      <div className="main">
-        <Topbar
-          user={user}
-          onEditChannel={() => setCurrentView('edit-channel')}
-          onLogoClick={() => handleNavigate('home')}
+      {isStudioOpen ? (
+        <YouTubeStudio 
+          onClose={handleStudioClose}
+          showUploadModal={showUploadModal}
         />
-        <div style={{ padding: '10px', backgroundColor: '#f1f1f1' }}>
-          <span>Welcome, <strong>{user.username}</strong> </span>
-          <button
-            style={{ marginLeft: '10px' }}
-            onClick={() => {
-              localStorage.removeItem('token');
-              setUser(null);
-              setView('login');
-            }}
-          >
-            Logout
-          </button>
-        </div>
-        {renderMainContent()}
-      </div>
+      ) : (
+        <>
+          <Sidebar onNavigate={handleNavigate} currentView={currentView} />
+          <div className="main">
+            <Topbar 
+              onLogoClick={() => handleNavigate('home')}
+              onStudioOpen={handleStudioOpen}
+            />
+            {renderMainContent()}
+          </div>
+        </>
+      )}
     </div>
   );
 }

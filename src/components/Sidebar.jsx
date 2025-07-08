@@ -41,7 +41,7 @@ export default function Sidebar({ onNavigate, currentView }) {
             className={`sidebar-item ${currentView === item.view ? 'active' : ''}`}
             onClick={() => onNavigate(item.view)}
           >
-            <div>{item.icon}</div>
+            <div className="sidebar-icon">{item.icon}</div>
             <span className="nav-text">{item.label}</span>
           </div>
         ))}

@@ -16,16 +16,18 @@
 .sidebar-section {
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
 .sidebar-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px;
+  gap: 16px;
+  padding: 8px 12px;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: 8px;
   transition: background-color 0.2s;
+  min-height: 40px;
 }
 
 .sidebar-item:hover {
@@ -39,12 +41,29 @@
 }
 
 .sidebar-icon {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
   transition: stroke 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-item svg {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  display: block;
 }
 
 .sidebar-item:hover svg path {
   fill: red;
+}
+
+.nav-text {
+  font-size: 14px;
+  font-weight: 400;
+  color: #0f0f0f;
+  line-height: 1.4;
 }
