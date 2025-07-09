@@ -4,18 +4,24 @@ body {
   padding: 0;
 }
 
-.app {
+.App {
   display: flex;
+  flex-direction: column;
   height: 100vh;
   background-color: white;
 }
 
-.main {
-  flex: 1;
+.app-body {
   display: flex;
-  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  margin-top: 56px; /* Account for fixed topbar */
+}
+
+.main-content {
+  flex: 1;
   overflow-y: auto;
-  margin-top: 56px;
+  padding: 20px;
 }
 
 .current-channel {
