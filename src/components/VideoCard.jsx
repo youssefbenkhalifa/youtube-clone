@@ -1,28 +1,20 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import './VideoCard.css';
 
-export default function VideoCard({ thumbnail, title, author, views, date, duration, onChannelClick, onVideoClick }) {
+export default function VideoCard({ id, thumbnail, title, author, views, date, duration }) {
+  const navigate = useNavigate();
+
   const handleChannelClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (onChannelClick) {
-      onChannelClick(author);
-    }
+    // Convert channel name to URL-friendly format
+    const channelName = author.toLowerCase().replace(/\s+/g, '-');
+    navigate(`/channel/${channelName}`);
   };
 
   const handleVideoClick = () => {
-    if (onVideoClick) {
-      onVideoClick({
-        title,
-        author,
-        views,
-        date,
-        thumbnail,
-        duration,
-        likes: Math.floor(Math.random() * 10000) + 500,
-        description: `This is a sample video description for "${title}". It contains information about the video content, what viewers can expect to learn, and other relevant details that help users understand what the video is about.`
-      });
-    }
+    navigate(`/watch/${id}`);
   };
 
   return (
@@ -39,13 +31,13 @@ export default function VideoCard({ thumbnail, title, author, views, date, durat
             alt={author} 
             className="channel-avatar"
             onClick={handleChannelClick}
-            style={{ cursor: onChannelClick ? 'pointer' : 'default' }}
+            style={{ cursor: 'pointer' }}
           />
           <div className="channel-details">
             <p 
               className="video-meta channel-name" 
               onClick={handleChannelClick}
-              style={{ cursor: onChannelClick ? 'pointer' : 'default' }}
+              style={{ cursor: 'pointer' }}
             >
               {author}
             </p>

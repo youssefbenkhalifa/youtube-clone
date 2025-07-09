@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Topbar.css';
 
-export default function Topbar({ onLogoClick, onStudioOpen }) {
+export default function Topbar() {
+  const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -47,9 +49,11 @@ export default function Topbar({ onLogoClick, onStudioOpen }) {
 
   const handleStudioNavigation = () => {
     setIsDropdownOpen(false);
-    if (onStudioOpen) {
-      onStudioOpen(false);
-    }
+    navigate('/studio');
+  };
+
+  const handleLogoClick = () => {
+    navigate('/');
   };
 
   const handleFileSelect = () => {
@@ -91,7 +95,7 @@ export default function Topbar({ onLogoClick, onStudioOpen }) {
 
   return (
     <div className="topbar">
-      <div className="topbar-left" onClick={onLogoClick} style={{ cursor: 'pointer' }}>
+      <div className="topbar-left" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
         <svg
         className='youtube-logo'
   xmlns="http://www.w3.org/2000/svg"
@@ -148,7 +152,7 @@ export default function Topbar({ onLogoClick, onStudioOpen }) {
           viewBox="0 0 24 24" 
           fill="none" 
           xmlns="http://www.w3.org/2000/svg"
-          onClick={() => onStudioOpen && onStudioOpen(true)}
+          onClick={toggleUploadModal}
           style={{ cursor: 'pointer' }}
         >
           <path d="M17 10.5V7C17 6.45 16.55 6 16 6H4C3.45 6 3 6.45 3 7V17C3 17.55 3.45 18 4 18H16C16.55 18 17 17.55 17 17V13.5L21 17.5V6.5L17 10.5ZM14 13H11V16H9V13H6V11H9V8H11V11H14V13Z" fill="#606060"/>

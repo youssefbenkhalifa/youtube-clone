@@ -1,7 +1,24 @@
 import React, { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import './VideoWatch.css';
 
-export default function VideoWatch({ video, onChannelClick, onVideoClick, onHomeClick }) {
+export default function VideoWatch() {
+  const { videoId } = useParams();
+  const navigate = useNavigate();
+  
+  // Mock video data - in a real app this would come from an API call using the videoId
+  const video = {
+    id: videoId,
+    title: `Sample Video Title ${videoId}`,
+    author: 'Sample Channel',
+    views: '1.2M views',
+    date: '2 days ago',
+    thumbnail: '/images/thumbnail.jpg',
+    duration: '10:25',
+    likes: 12500,
+    description: `This is a sample video description for video ${videoId}. It contains information about the video content, what viewers can expect to learn, and other relevant details that help users understand what the video is about.`
+  };
+  
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [likeCount, setLikeCount] = useState(video?.likes || 1234);
   const [isLiked, setIsLiked] = useState(false);
@@ -81,24 +98,16 @@ export default function VideoWatch({ video, onChannelClick, onVideoClick, onHome
   };
 
   const handleChannelClick = () => {
-    if (onChannelClick) {
-      onChannelClick(video?.author);
-    }
+    const channelName = video?.author.toLowerCase().replace(/\s+/g, '-');
+    navigate(`/channel/${channelName}`);
   };
 
   const handleRecommendedVideoClick = (recommendedVideo) => {
-    if (onVideoClick) {
-      onVideoClick({
-        title: recommendedVideo.title,
-        author: recommendedVideo.author,
-        views: recommendedVideo.views,
-        date: recommendedVideo.date,
-        thumbnail: recommendedVideo.thumbnail,
-        duration: recommendedVideo.duration,
-        likes: Math.floor(Math.random() * 10000) + 500,
-        description: "This is a sample video description. It contains information about the video content, what viewers can expect to learn, and other relevant details that help users understand what the video is about."
-      });
-    }
+    navigate(`/watch/${recommendedVideo.id}`);
+  };
+
+  const handleHomeClick = () => {
+    navigate('/');
   };
 
   if (!video) {
@@ -106,7 +115,7 @@ export default function VideoWatch({ video, onChannelClick, onVideoClick, onHome
       <div className="video-watch-container">
         <div className="video-not-found">
           <h2>Video not found</h2>
-          <button onClick={onHomeClick} className="back-home-btn">
+          <button onClick={handleHomeClick} className="back-home-btn">
             Go back to Home
           </button>
         </div>
