@@ -2,16 +2,26 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Topbar.css';
 
-export default function Topbar() {
+export default function Topbar({ user, setUser }) {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [isDragOver, setIsDragOver] = useState(false);
   const dropdownRef = useRef(null);
   const notificationsRef = useRef(null);
-  const uploadModalRef = useRef(null);
-  const fileInputRef = useRef(null);
+
+  // Logout function
+  const handleLogout = () => {
+    // Clear all stored tokens
+    localStorage.removeItem('token');
+    localStorage.removeItem('rememberMe');
+    sessionStorage.removeItem('token');
+    
+    // Clear user state
+    setUser(null);
+    
+    // Navigate to login
+    navigate('/login');
+  };
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -21,19 +31,16 @@ export default function Topbar() {
       if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
         setIsNotificationsOpen(false);
       }
-      if (uploadModalRef.current && !uploadModalRef.current.contains(event.target)) {
-        setIsUploadModalOpen(false);
-      }
     }
 
-    if (isDropdownOpen || isNotificationsOpen || isUploadModalOpen) {
+    if (isDropdownOpen || isNotificationsOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isDropdownOpen, isNotificationsOpen, isUploadModalOpen]);
+  }, [isDropdownOpen, isNotificationsOpen]);
 
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
@@ -43,8 +50,8 @@ export default function Topbar() {
     setIsNotificationsOpen(!isNotificationsOpen);
   };
 
-  const toggleUploadModal = () => {
-    setIsUploadModalOpen(!isUploadModalOpen);
+  const handleUploadClick = () => {
+    navigate('/studio?upload=true');
   };
 
   const handleStudioNavigation = () => {
@@ -54,43 +61,6 @@ export default function Topbar() {
 
   const handleLogoClick = () => {
     navigate('/');
-  };
-
-  const handleFileSelect = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (event) => {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      handleFileUpload(files);
-    }
-  };
-
-  const handleFileUpload = (files) => {
-    // Handle file upload logic here
-    console.log('Files to upload:', Array.from(files));
-    // For now, just close the modal
-    setIsUploadModalOpen(false);
-  };
-
-  const handleDragOver = (event) => {
-    event.preventDefault();
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = (event) => {
-    event.preventDefault();
-    setIsDragOver(false);
-  };
-
-  const handleDrop = (event) => {
-    event.preventDefault();
-    setIsDragOver(false);
-    const files = event.dataTransfer.files;
-    if (files && files.length > 0) {
-      handleFileUpload(files);
-    }
   };
 
   return (
@@ -152,7 +122,7 @@ export default function Topbar() {
           viewBox="0 0 24 24" 
           fill="none" 
           xmlns="http://www.w3.org/2000/svg"
-          onClick={toggleUploadModal}
+          onClick={handleUploadClick}
           style={{ cursor: 'pointer' }}
         >
           <path d="M17 10.5V7C17 6.45 16.55 6 16 6H4C3.45 6 3 6.45 3 7V17C3 17.55 3.45 18 4 18H16C16.55 18 17 17.55 17 17V13.5L21 17.5V6.5L17 10.5ZM14 13H11V16H9V13H6V11H9V8H11V11H14V13Z" fill="#606060"/>
@@ -240,7 +210,7 @@ export default function Topbar() {
                 </svg>
                 Switch account
               </div>
-              <div className="dropdown-item">
+              <div className="dropdown-item" onClick={handleLogout}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" fill="#606060"/>
                 </svg>
@@ -293,38 +263,6 @@ export default function Topbar() {
           )}
         </div>
       </div>
-
-      {/* Upload Modal */}
-      {isUploadModalOpen && (
-        <div className="upload-modal-overlay">
-          <div className="upload-modal" ref={uploadModalRef}>
-            <div className="upload-modal-header">
-              <h2>Upload videos</h2>
-              <button className="upload-modal-close" onClick={toggleUploadModal}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="#606060"/>
-                </svg>
-              </button>
-            </div>
-            <div className="upload-modal-content">
-              <div className="upload-drop-zone">
-                <svg width="136" height="136" viewBox="0 0 136 136" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M68 8.5L68 127.5" stroke="#E0E0E0" strokeWidth="2"/>
-                  <path d="M127.5 68L8.5 68" stroke="#E0E0E0" strokeWidth="2"/>
-                  <path d="M68 40L56 28L68 16L80 28L68 40Z" fill="#E0E0E0"/>
-                </svg>
-                <h3>Drag and drop video files to upload</h3>
-                <p>Your videos will be private until you publish them.</p>
-                <button className="select-files-btn">SELECT FILES</button>
-              </div>
-              <div className="upload-modal-footer">
-                <p>By submitting your videos to YouTube, you acknowledge that you agree to YouTube's <a href="https://www.youtube.com/t/terms">Terms of Service</a> and <a href="https://www.youtube.com/howyoutubeworks/policies/community-guidelines/">Community Guidelines</a>.</p>
-                <p>Please be sure not to violate others' copyright or privacy rights. <a href="https://support.google.com/youtube/answer/2797466">Learn more</a></p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

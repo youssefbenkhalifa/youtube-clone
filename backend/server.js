@@ -59,29 +59,18 @@ const mockVideos = [
 ];
 
 // Mock API endpoints (work without database)
-app.get('/api/videos', (req, res) => {
-  res.json({
-    success: true,
-    data: mockVideos,
-    message: mongoConnected ? 'Data from MongoDB' : 'Mock data (MongoDB not connected)'
-  });
-});
 
-app.get('/api/videos/:id', (req, res) => {
-  const video = mockVideos.find(v => v.id === req.params.id);
-  if (!video) {
-    return res.status(404).json({ success: false, message: 'Video not found' });
-  }
-  res.json({ success: true, data: video });
-});
 
 // Load auth routes immediately (they'll work with or without DB)
 try {
   const authRoutes = require('./routes/auth');
   const userRoutes = require('./routes/User');
+  const videoRoutes = require('./routes/videos');
   app.use('/api/auth', authRoutes);
   app.use('/api/user', userRoutes);
+  app.use('/api/videos', videoRoutes);
   console.log('✅ Auth routes loaded');
+  console.log('✅ Video routes loaded');
 } catch (routeError) {
   console.log('⚠️  Database routes failed to load:', routeError.message);
   console.log('📝 Creating mock auth routes...');

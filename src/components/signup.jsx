@@ -19,10 +19,14 @@ export default function Signup({ setUser }) {
         body: JSON.stringify({ username, email, password }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Signup failed');
+      if (!res.ok) throw new Error(data.message || data.msg || 'Signup failed');
 
-      // Auto-login after successful signup
-      localStorage.setItem('token', data.token || 'mock-token');
+      // Auto-login after successful signup and store token
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('rememberMe', 'true'); // Auto-remember on signup
+      }
+      
       setUser(data.user);
       navigate('/'); // Navigate to home page
     } catch (err) {

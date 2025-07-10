@@ -19,12 +19,15 @@ export default function Login({ setUser }) {
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.msg || 'Login failed');
+      if (!res.ok) throw new Error(data.message || data.msg || 'Login failed');
 
+      // Store token based on remember me preference
       if (remember) {
         localStorage.setItem('token', data.token);
+        localStorage.setItem('rememberMe', 'true');
       } else {
         sessionStorage.setItem('token', data.token);
+        localStorage.removeItem('rememberMe');
       }
 
       setUser(data.user);
