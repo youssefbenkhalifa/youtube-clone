@@ -14,6 +14,7 @@ const channelNames = [
 ];
 
 const videos = Array.from({ length: 16 }, (_, i) => ({
+  id: i + 1,
   title: `Sample Video Title ${i + 1}`,
   author: channelNames[i % channelNames.length],
   views: `${(i + 1) * 10}K views`,
@@ -22,15 +23,13 @@ const videos = Array.from({ length: 16 }, (_, i) => ({
   duration: `${Math.floor(Math.random() * 10) + 1}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`
 }));
 
-export default function VideoGrid({ onChannelClick, onVideoClick }) {
+export default function VideoGrid() {
   return (
     <div className="video-grid">
       {videos.map((video, index) => (
         <VideoCard 
           key={index} 
-          {...video} 
-          onChannelClick={onChannelClick} 
-          onVideoClick={onVideoClick}
+          {...video}
         />
       ))}
     </div>

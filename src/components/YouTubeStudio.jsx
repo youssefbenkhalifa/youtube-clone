@@ -1,11 +1,95 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './YouTubeStudio.css';
 
-export default function YouTubeStudio({ onClose, showUploadModal = false }) {
+// Helper to get the correct thumbnail URL
+function getThumbnailUrl(thumbnail) {
+  if (!thumbnail) return '/images/thumbnail.jpg';
+  if (thumbnail.startsWith('/uploads/')) {
+    return `http://localhost:5000${thumbnail}`;
+  }
+  return thumbnail;
+}
+
+// Helper for formatting date
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+// Helper for "days ago" formatting
+function getDaysAgo(dateString) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return '1 day ago';
+  return `${diffDays} days ago`;
+}
+
+export default function YouTubeStudio({ showUploadModal = false }) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [selectedTab, setSelectedTab] = useState('content');
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(showUploadModal);
   const [dragActive, setDragActive] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [uploadStep, setUploadStep] = useState('select'); // 'select', 'details', 'elements', 'checks', 'visibility'
+  const [videoTitle, setVideoTitle] = useState('');
+  const [videoDescription, setVideoDescription] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [videos, setVideos] = useState([]);
+  const [loadingVideos, setLoadingVideos] = useState(false);
+  const [videoError, setVideoError] = useState(null);
+  const [selectedThumbnail, setSelectedThumbnail] = useState(null);
+  // Fetch uploaded videos for the current user
+  useEffect(() => {
+    if (selectedTab !== 'content') return;
+    const fetchVideos = async () => {
+      setLoadingVideos(true);
+      setVideoError(null);
+      try {
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        const res = await fetch('http://localhost:5000/api/videos/my', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+        if (data.success) {
+          setVideos(data.data);
+        } else {
+          setVideoError(data.message || 'Failed to fetch videos');
+        }
+      } catch (err) {
+        setVideoError('Failed to fetch videos');
+      } finally {
+        setLoadingVideos(false);
+      }
+    };
+    fetchVideos();
+  }, [selectedTab, isUploadModalOpen]);
+
+  // Check URL parameters for auto-opening upload modal
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('upload') === 'true') {
+      setIsUploadModalOpen(true);
+      // Clean up the URL parameter after opening the modal
+      navigate('/studio', { replace: true });
+    }
+  }, [location.search, navigate]);
+
+  const handleBackToYouTube = () => {
+    navigate('/');
+  };
 
   const handleTabClick = (tab) => {
     setSelectedTab(tab);
@@ -44,6 +128,84 @@ export default function YouTubeStudio({ onClose, showUploadModal = false }) {
     if (e.target.files && e.target.files[0]) {
       const files = Array.from(e.target.files);
       setSelectedFiles(files);
+      // Auto-set title from first file
+      if (files.length > 0) {
+        const fileName = files[0].name.replace(/\.[^/.]+$/, ""); // Remove extension
+        setVideoTitle(fileName);
+      }
+    }
+  };
+
+  const handleStartUpload = async () => {
+    if (selectedFiles.length === 0) return;
+    setIsUploading(true);
+    setUploadStep('details');
+    try {
+      const file = selectedFiles[0];
+      const formData = new FormData();
+      formData.append('video', file);
+      formData.append('title', videoTitle);
+      formData.append('description', videoDescription);
+      formData.append('visibility', 'private'); // Default to private
+      if (selectedThumbnail) {
+        formData.append('thumbnail', selectedThumbnail);
+      }
+      // Get token from localStorage or sessionStorage
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      // Start upload with progress tracking
+      const xhr = new XMLHttpRequest();
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const progress = Math.round((event.loaded / event.total) * 100);
+          setUploadProgress(progress);
+        }
+      };
+      xhr.onload = () => {
+        if (xhr.status === 201) {
+          const response = JSON.parse(xhr.responseText);
+          console.log('Upload successful:', response);
+          setUploadProgress(100);
+        } else {
+          const error = JSON.parse(xhr.responseText);
+          console.error('Upload failed:', error);
+          alert('Upload failed: ' + (error.message || 'Unknown error'));
+          setIsUploading(false);
+        }
+      };
+      xhr.onerror = () => {
+        console.error('Upload failed due to network error');
+        alert('Upload failed due to network error');
+        setIsUploading(false);
+      };
+      xhr.open('POST', 'http://localhost:5000/api/videos/upload');
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      xhr.send(formData);
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Upload failed: ' + error.message);
+      setIsUploading(false);
+    }
+  };
+
+  const handleStepChange = (step) => {
+    setUploadStep(step);
+  };
+
+  const handlePublishVideo = async () => {
+    try {
+      // Here you could update video details, change visibility, etc.
+      alert('Video published successfully!');
+      setIsUploadModalOpen(false);
+      // Reset form
+      setSelectedFiles([]);
+      setVideoTitle('');
+      setVideoDescription('');
+      setUploadStep('select');
+      setUploadProgress(0);
+      setIsUploading(false);
+    } catch (error) {
+      console.error('Error publishing video:', error);
+      alert('Error publishing video: ' + error.message);
     }
   };
 
@@ -51,7 +213,7 @@ export default function YouTubeStudio({ onClose, showUploadModal = false }) {
     <div className="youtube-studio">
       <div className="studio-header">
         <div className="studio-header-left">
-          <button className="studio-back-btn" onClick={onClose}>
+          <button className="studio-back-btn" onClick={handleBackToYouTube}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" fill="#606060"/>
             </svg>
@@ -135,22 +297,116 @@ export default function YouTubeStudio({ onClose, showUploadModal = false }) {
 
           {selectedTab === 'content' && (
             <div className="studio-content-tab">
-              <h1>Channel content</h1>
-              <div className="content-filters">
-                <button className="filter-btn active">Videos</button>
-                <button className="filter-btn">Shorts</button>
-                <button className="filter-btn">Live</button>
-                <button className="filter-btn">Playlists</button>
+              <div className="channel-header">
+                <div className="channel-info">
+                  <div className="channel-avatar">
+                    <div className="avatar-circle">Y</div>
+                  </div>
+                  <div className="channel-details">
+                    <h1>Your channel</h1>
+                    <p>Youssef Ben Khalifa</p>
+                  </div>
+                </div>
               </div>
-              <div className="content-empty">
-                <svg width="120" height="120" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M17 10.5V7C17 6.45 16.55 6 16 6H4C3.45 6 3 6.45 3 7V17C3 17.55 3.45 18 4 18H16C16.55 18 17 17.55 17 17V13.5L21 17.5V6.5L17 10.5Z" fill="#909090"/>
-                </svg>
-                <h3>No videos uploaded</h3>
-                <p>Upload your first video to get started</p>
-                <button className="upload-first-video-btn" onClick={handleUploadOpen}>
-                  Upload video
-                </button>
+
+              <div className="content-section">
+                <h2>Channel content</h2>
+                <div className="content-nav-tabs">
+                  <button className="tab-btn">Inspiration</button>
+                  <button className="tab-btn active">Videos</button>
+                  <button className="tab-btn">Shorts</button>
+                  <button className="tab-btn">Live</button>
+                  <button className="tab-btn">Posts</button>
+                  <button className="tab-btn">Playlists</button>
+                  <button className="tab-btn">Podcasts</button>
+                  <button className="tab-btn">Promotions</button>
+                </div>
+
+                <div className="content-controls">
+                  <div className="filter-section">
+                    <button className="filter-toggle">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z" fill="#606060"/>
+                      </svg>
+                      Filter
+                    </button>
+                  </div>
+                </div>
+
+
+                <div className="video-list-table">
+                  <div className="table-header">
+                    <div className="table-row">
+                      <div className="table-cell checkbox-cell">
+                        <input type="checkbox" />
+                      </div>
+                      <div className="table-cell video-cell">Video</div>
+                      <div className="table-cell visibility-cell">Visibility</div>
+                      <div className="table-cell restrictions-cell">Restrictions</div>
+                      <div className="table-cell date-cell">Date ↓</div>
+                      <div className="table-cell views-cell">Views</div>
+                      <div className="table-cell comments-cell">Comments</div>
+                      <div className="table-cell likes-cell">Likes (vs. dislikes)</div>
+                    </div>
+                  </div>
+                  <div className="table-body">
+                    {loadingVideos ? (
+                      <div className="table-row"><div className="table-cell" colSpan={8}>Loading...</div></div>
+                    ) : videoError ? (
+                      <div className="table-row"><div className="table-cell" colSpan={8}>{videoError}</div></div>
+                    ) : videos.length === 0 ? (
+                      <div className="table-row"><div className="table-cell" colSpan={8}>No videos uploaded yet.</div></div>
+                    ) : (
+                      videos.map((video) => (
+                        <div
+                          className="table-row video-row"
+                          key={video._id}
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => navigate(`/watch/${video._id}`)}
+                        >
+                          <div className="table-cell checkbox-cell">
+                            <input type="checkbox" onClick={e => e.stopPropagation()} />
+                          </div>
+                          <div className="table-cell video-cell">
+                            <div className="video-thumbnail">
+                              <img
+                                src={getThumbnailUrl(video.thumbnail)}
+                                alt="Video thumbnail"
+                                style={{ width: 120, height: 'auto', borderRadius: 8, border: '1px solid #ccc' }}
+                              />
+                            </div>
+                            <div className="video-info">
+                              <div className="video-title">{video.title}</div>
+                              <div className="video-description">{video.description || 'No description'}</div>
+                            </div>
+                          </div>
+                          <div className="table-cell visibility-cell">
+                            <span className={`visibility-status ${video.visibility}`}>
+                              {video.visibility ? video.visibility.charAt(0).toUpperCase() + video.visibility.slice(1) : 'Private'}
+                            </span>
+                          </div>
+                          <div className="table-cell restrictions-cell">None</div>
+                          <div className="table-cell date-cell">
+                            <div>{getDaysAgo(video.createdAt)}</div>
+                            <div className="upload-status">Uploaded</div>
+                          </div>
+                          <div className="table-cell views-cell">{video.views ?? 0}</div>
+                          <div className="table-cell comments-cell">{video.comments?.length ?? 0}</div>
+                          <div className="table-cell likes-cell">{video.likes?.length ?? 0} 👍 / {video.dislikes?.length ?? 0} 👎</div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div className="table-pagination">
+                  <span>Rows per page: 30</span>
+                  <span>1 - 6 of 6</span>
+                  <div className="pagination-controls">
+                    <button disabled>‹</button>
+                    <button disabled>›</button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -180,61 +436,239 @@ export default function YouTubeStudio({ onClose, showUploadModal = false }) {
         <div className="upload-modal-overlay" onClick={handleUploadClose}>
           <div className="upload-modal" onClick={(e) => e.stopPropagation()}>
             <div className="upload-modal-header">
-              <h2>Upload videos</h2>
-              <button className="upload-close-btn" onClick={handleUploadClose}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="#606060"/>
-                </svg>
-              </button>
+              <h2>{uploadStep === 'select' ? 'Upload videos' : selectedFiles[0]?.name || 'video1'}</h2>
+              <div className="upload-modal-actions">
+                {uploadStep !== 'select' && (
+                  <span className="save-status">Saved as private</span>
+                )}
+                <button className="upload-close-btn" onClick={handleUploadClose}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="#606060"/>
+                  </svg>
+                </button>
+              </div>
             </div>
+
+            {uploadStep !== 'select' && (
+              <div className="upload-progress-stepper">
+                <div className={`step ${uploadStep === 'details' ? 'active' : ''}`} onClick={() => handleStepChange('details')}>
+                  <div className="step-circle">1</div>
+                  <span>Details</span>
+                </div>
+                <div className="step-line"></div>
+                <div className={`step ${uploadStep === 'elements' ? 'active' : ''}`} onClick={() => handleStepChange('elements')}>
+                  <div className="step-circle">2</div>
+                  <span>Video elements</span>
+                </div>
+                <div className="step-line"></div>
+                <div className={`step ${uploadStep === 'checks' ? 'active' : ''}`} onClick={() => handleStepChange('checks')}>
+                  <div className="step-circle">3</div>
+                  <span>Checks</span>
+                </div>
+                <div className="step-line"></div>
+                <div className={`step ${uploadStep === 'visibility' ? 'active' : ''}`} onClick={() => handleStepChange('visibility')}>
+                  <div className="step-circle">4</div>
+                  <span>Visibility</span>
+                </div>
+              </div>
+            )}
             
             <div className="upload-modal-content">
-              <div 
-                className={`upload-drop-zone ${dragActive ? 'drag-active' : ''}`}
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-              >
-                <input
-                  type="file"
-                  id="video-upload"
-                  accept="video/*"
-                  multiple
-                  onChange={handleFileSelect}
-                  style={{ display: 'none' }}
-                />
-                
-                {selectedFiles.length === 0 ? (
-                  <>
-                    <svg width="136" height="136" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" fill="#909090"/>
-                    </svg>
-                    <h3>Drag and drop video files to upload</h3>
-                    <p>Your videos will be private until you publish them.</p>
-                    <label htmlFor="video-upload" className="select-files-btn">
-                      SELECT FILES
-                    </label>
-                  </>
-                ) : (
-                  <div className="upload-files-list">
-                    <h3>Selected files:</h3>
-                    {selectedFiles.map((file, index) => (
-                      <div key={index} className="upload-file-item">
-                        <span>{file.name}</span>
-                        <span className="file-size">{(file.size / 1024 / 1024).toFixed(2)} MB</span>
+              {uploadStep === 'select' ? (
+                <div 
+                  className={`upload-drop-zone ${dragActive ? 'drag-active' : ''}`}
+                  onDragEnter={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDragOver={handleDrag}
+                  onDrop={handleDrop}
+                >
+                  <input
+                    type="file"
+                    id="video-upload"
+                    accept="video/*"
+                    multiple
+                    onChange={handleFileSelect}
+                    style={{ display: 'none' }}
+                  />
+                  
+                  {selectedFiles.length === 0 ? (
+                    <>
+                      <svg width="136" height="136" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" fill="#909090"/>
+                      </svg>
+                      <h3>Drag and drop video files to upload</h3>
+                      <p>Your videos will be private until you publish them.</p>
+                      <label htmlFor="video-upload" className="select-files-btn">
+                        SELECT FILES
+                      </label>
+                    </>
+                  ) : (
+                    <div className="upload-files-list">
+                      <h3>Selected files:</h3>
+                      {selectedFiles.map((file, index) => (
+                        <div key={index} className="upload-file-item">
+                          <span>{file.name}</span>
+                          <span className="file-size">{(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                        </div>
+                      ))}
+                      <button className="upload-process-btn" onClick={handleStartUpload}>Start Upload</button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="upload-details-container">
+                  <div className="upload-details-left">
+                    <div className="upload-section">
+                      <div className="section-header">
+                        <h3>Details</h3>
                       </div>
-                    ))}
-                    <button className="upload-process-btn">Start Upload</button>
+                      
+                      <div className="form-group">
+                        <label htmlFor="video-title">Title (required)</label>
+                        <input
+                          type="text"
+                          id="video-title"
+                          value={videoTitle}
+                          onChange={(e) => setVideoTitle(e.target.value)}
+                          maxLength={100}
+                          placeholder="Add a title that describes your video"
+                        />
+                        <div className="char-count">{videoTitle.length}/100</div>
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="video-description">Description</label>
+                        <textarea
+                          id="video-description"
+                          value={videoDescription}
+                          onChange={(e) => setVideoDescription(e.target.value)}
+                          placeholder="Tell viewers about your video (type @ to mention a channel)"
+                          rows={6}
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label>Thumbnail</label>
+                        <p className="form-help">Set a thumbnail that stands out and draws viewers' attention. <button className="link-btn">Learn more</button></p>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={e => {
+                            if (e.target.files && e.target.files[0]) {
+                              setSelectedThumbnail(e.target.files[0]);
+                            }
+                          }}
+                        />
+                        {selectedThumbnail && (
+                          <div style={{ marginTop: 8 }}>
+                            <img
+                              src={URL.createObjectURL(selectedThumbnail)}
+                              alt="Thumbnail preview"
+                              style={{ width: 120, height: 'auto', borderRadius: 8, border: '1px solid #ccc' }}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="form-group">
+                        <label>Playlists</label>
+                        <p className="form-help">Add your video to one or more playlists to organize your content for viewers. <button className="link-btn">Learn more</button></p>
+                        <select className="playlist-select">
+                          <option>Select</option>
+                        </select>
+                      </div>
+
+                      <div className="form-group">
+                        <label>Audience</label>
+                        <p className="audience-subtitle">Is this video made for kids? (required)</p>
+                        <p className="form-help">Regardless of your location, you're legally required to comply with the Children's Online Privacy Protection Act (COPPA) and/or other laws. You're required to tell us whether your videos are made for kids. <button className="link-btn">What's content made for kids?</button></p>
+                        <div className="audience-notice">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="#1976d2"/>
+                          </svg>
+                          <span>Features like personalized ads and notifications won't be available on videos made for kids. Videos that are set as made for kids by you are more likely to be recommended alongside other kids' videos. <button className="link-btn">Learn more</button></span>
+                        </div>
+                        <div className="radio-group">
+                          <div className="radio-option">
+                            <input type="radio" id="kids-yes" name="audience" />
+                            <label htmlFor="kids-yes">Yes, it's made for kids</label>
+                          </div>
+                          <div className="radio-option">
+                            <input type="radio" id="kids-no" name="audience" defaultChecked />
+                            <label htmlFor="kids-no">No, it's not made for kids</label>
+                          </div>
+                        </div>
+                        <details className="age-restriction">
+                          <summary>Age restriction (advanced)</summary>
+                        </details>
+                      </div>
+
+                      <div className="form-group">
+                        <details className="show-more">
+                          <summary>Show more</summary>
+                          <p>Paid promotion, tags, subtitles, and more</p>
+                        </details>
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
+
+                  <div className="upload-details-right">
+                    <div className="upload-status">
+                      <div className="upload-progress-container">
+                        <div className="upload-visual">
+                          {isUploading ? (
+                            <>
+                              <div className="upload-spinner"></div>
+                              <p>Processing video...</p>
+                            </>
+                          ) : (
+                            <p>Uploading video...</p>
+                          )}
+                        </div>
+                        
+                        <div className="video-info">
+                          <div className="info-row">
+                            <span>Video link</span>
+                            <div className="video-link">
+                              <span>https://youtu.be/CsVo-MfcR70</span>
+                              <button className="copy-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                  <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" fill="#606060"/>
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                          <div className="info-row">
+                            <span>Filename</span>
+                            <span>{selectedFiles[0]?.name || 'video1.mp4'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
               
-              <div className="upload-modal-footer">
-                <p>By submitting your videos to YouTube, you acknowledge that you agree to YouTube's <button className="link-btn">Terms of Service</button> and <button className="link-btn">Community Guidelines</button>.</p>
-                <p>Please be sure not to violate others' copyright or privacy rights. <button className="link-btn">Learn more</button></p>
-              </div>
+              {uploadStep === 'select' && (
+                <div className="upload-modal-footer">
+                  <p>By submitting your videos to YouTube, you acknowledge that you agree to YouTube's <button className="link-btn">Terms of Service</button> and <button className="link-btn">Community Guidelines</button>.</p>
+                  <p>Please be sure not to violate others' copyright or privacy rights. <button className="link-btn">Learn more</button></p>
+                </div>
+              )}
             </div>
+
+            {uploadStep !== 'select' && (
+              <div className="upload-modal-footer-actions">
+                <div className="upload-progress-footer">
+                  <div className="progress-info">
+                    <span>Processing up to SD... {Math.round(uploadProgress)}% 3 minutes left</span>
+                  </div>
+                  <div className="footer-actions">
+                    <button className="next-btn" onClick={handlePublishVideo}>Publish</button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

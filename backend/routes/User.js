@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 
 const auth = require('../middleware/auth');
-const User = require('../models/user');
+const User = require('../models/User');
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
