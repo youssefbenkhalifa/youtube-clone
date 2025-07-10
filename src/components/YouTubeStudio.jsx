@@ -49,6 +49,8 @@ export default function YouTubeStudio({ showUploadModal = false }) {
   const [loadingVideos, setLoadingVideos] = useState(false);
   const [videoError, setVideoError] = useState(null);
   const [selectedThumbnail, setSelectedThumbnail] = useState(null);
+  const [user, setUser] = useState(null);
+
   // Fetch uploaded videos for the current user
   useEffect(() => {
     if (selectedTab !== 'content') return;
@@ -86,6 +88,30 @@ export default function YouTubeStudio({ showUploadModal = false }) {
       navigate('/studio', { replace: true });
     }
   }, [location.search, navigate]);
+
+  useEffect(() => {
+  const fetchUser = async () => {
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      console.log('📦 Fetching user with token:', token); // 🔍
+      const res = await fetch('http://localhost:5000/api/auth/me', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      console.log('👤 User fetch result:', data); // 🔍
+      if (data && data.user && data.user._id) {
+        setUser(data.user);
+      } else {
+        console.error('User fetch failed (no _id):', data);
+      }
+    } catch (err) {
+      console.error('❌ Failed to load user info', err);
+    }
+  };
+  fetchUser();
+}, []);
 
   const handleBackToYouTube = () => {
     navigate('/');
@@ -277,37 +303,70 @@ export default function YouTubeStudio({ showUploadModal = false }) {
             </button>
           </div>
         </div>
+<div className="studio-main">
+  {selectedTab === 'dashboard' && (
+    <div className="studio-dashboard">
+      <h1>Channel dashboard</h1>
+      <div className="dashboard-cards">
+        <div className="dashboard-card">
+          <h3>Latest video performance</h3>
+          <p>No videos uploaded yet</p>
+        </div>
+        <div className="dashboard-card">
+          <h3>Channel analytics</h3>
+          <p>Get insights about your channel</p>
+        </div>
+      </div>
+    </div>
+  )}
 
-        <div className="studio-main">
-          {selectedTab === 'dashboard' && (
-            <div className="studio-dashboard">
-              <h1>Channel dashboard</h1>
-              <div className="dashboard-cards">
-                <div className="dashboard-card">
-                  <h3>Latest video performance</h3>
-                  <p>No videos uploaded yet</p>
-                </div>
-                <div className="dashboard-card">
-                  <h3>Channel analytics</h3>
-                  <p>Get insights about your channel</p>
-                </div>
-              </div>
-            </div>
-          )}
 
-          {selectedTab === 'content' && (
-            <div className="studio-content-tab">
-              <div className="channel-header">
-                <div className="channel-info">
-                  <div className="channel-avatar">
-                    <div className="avatar-circle">Y</div>
-                  </div>
-                  <div className="channel-details">
-                    <h1>Your channel</h1>
-                    <p>Youssef Ben Khalifa</p>
-                  </div>
-                </div>
-              </div>
+  {selectedTab === 'content' && (
+    <div className="studio-content-tab">
+      <div className="channel-header">
+        <div className="channel-info">
+          <div className="channel-avatar">
+            {user ? (
+              <img
+                src={user.profilePicture || '/images/default-pfp.png'}
+                alt="Profile"
+                onClick={() => navigate(`/account/${user._id}`)}
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  objectFit: 'cover'
+                }}
+              />
+            ) : (
+              <div className="avatar-circle">?</div>
+            )}
+          </div>
+          <div className="channel-details">
+            <h1>Your channel</h1>
+            <p>{user ? user.username : 'Loading...'}</p>
+          </div>
+        </div>
+      </div>
+      {user && (
+  <button
+    onClick={() => navigate('/EditChannel', { state: { user } })}
+    style={{
+      marginTop: '10px',
+      padding: '6px 12px',
+      backgroundColor: '#0f0f0f',
+      color: 'white',
+      border: 'none',
+      borderRadius: '4px',
+      cursor: 'pointer',
+    }}
+  >
+    Edit Channel
+  </button>
+)}
+
+
 
               <div className="content-section">
                 <h2>Channel content</h2>
