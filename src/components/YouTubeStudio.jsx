@@ -512,7 +512,6 @@ export default function YouTubeStudio({ showUploadModal = false }) {
                           <div className="table-cell restrictions-cell">{video.restrictions}</div>
                           <div className="table-cell date-cell">
                             <div>{video.date}</div>
-                            <div className="upload-status">{video.uploadStatus}</div>
                           </div>
                           <div className="table-cell views-cell">{video.views}</div>
                           <div className="table-cell comments-cell">{video.comments}</div>
