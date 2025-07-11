@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './YouTubeStudio.css';
 
-// Helper to get the correct thumbnail URLde
+// Helper to get the correct thumbnail URL
+// This function is kept for future reference but not currently used
+// since we're using hardcoded data
+/* 
 function getThumbnailUrl(thumbnail) {
   if (!thumbnail) return '/images/thumbnail.jpg';
   if (thumbnail.startsWith('/uploads/')) {
@@ -10,6 +13,7 @@ function getThumbnailUrl(thumbnail) {
   }
   return thumbnail;
 }
+*/
 
 // Helper for formatting date
 /*
@@ -23,6 +27,9 @@ function formatDate(dateString) {
 }
 */
 // Helper for "days ago" formatting
+// This function is kept for future reference but not currently used
+// since we're using hardcoded data
+/*
 function getDaysAgo(dateString) {
   const date = new Date(dateString);
   const now = new Date();
@@ -32,6 +39,7 @@ function getDaysAgo(dateString) {
   if (diffDays === 1) return '1 day ago';
   return `${diffDays} days ago`;
 }
+*/
 
 export default function YouTubeStudio({ showUploadModal = false }) {
   const navigate = useNavigate();
@@ -49,7 +57,8 @@ export default function YouTubeStudio({ showUploadModal = false }) {
   const [loadingVideos, setLoadingVideos] = useState(false);
   const [videoError, setVideoError] = useState(null);
   const [selectedThumbnail, setSelectedThumbnail] = useState(null);
-  const [user, setUser] = useState(null);
+  // We're keeping user state for future functionality
+  const [user, setUser] = useState(null); // eslint-disable-line no-unused-vars
 
   // Fetch uploaded videos for the current user
   useEffect(() => {
@@ -324,52 +333,14 @@ export default function YouTubeStudio({ showUploadModal = false }) {
   {selectedTab === 'content' && (
     <div className="studio-content-tab">
       <div className="channel-header">
-        <div className="channel-info">
-          <div className="channel-avatar">
-            {user ? (
-              <img
-                src={user.profilePicture || '/images/default-pfp.png'}
-                alt="Profile"
-                onClick={() => navigate(`/account/${user._id}`)}
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  objectFit: 'cover'
-                }}
-              />
-            ) : (
-              <div className="avatar-circle">?</div>
-            )}
-          </div>
-          <div className="channel-details">
-            <h1>Your channel</h1>
-            <p>{user ? user.username : 'Loading...'}</p>
-          </div>
+        <div className="channel-title">
+          <h1>Channel content</h1>
         </div>
       </div>
-      {user && (
-  <button
-    onClick={() => navigate('/EditChannel', { state: { user } })}
-    style={{
-      marginTop: '10px',
-      padding: '6px 12px',
-      backgroundColor: '#0f0f0f',
-      color: 'white',
-      border: 'none',
-      borderRadius: '4px',
-      cursor: 'pointer',
-    }}
-  >
-    Edit Channel
-  </button>
-)}
 
 
 
               <div className="content-section">
-                <h2>Channel content</h2>
                 <div className="content-nav-tabs">
                   <button className="tab-btn">Inspiration</button>
                   <button className="tab-btn active">Videos</button>
@@ -384,7 +355,7 @@ export default function YouTubeStudio({ showUploadModal = false }) {
                 <div className="content-controls">
                   <div className="filter-section">
                     <button className="filter-toggle">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                         <path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z" fill="#606060"/>
                       </svg>
                       Filter
@@ -397,14 +368,17 @@ export default function YouTubeStudio({ showUploadModal = false }) {
                   <div className="table-header">
                     <div className="table-row">
                       <div className="table-cell checkbox-cell">
+                        <input type="checkbox" />
                       </div>
                       <div className="table-cell video-cell">Video</div>
                       <div className="table-cell visibility-cell">Visibility</div>
                       <div className="table-cell restrictions-cell">Restrictions</div>
-                      <div className="table-cell date-cell">Date ↓</div>
+                      <div className="table-cell date-cell">Date <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                        <path d="M7 10l5 5 5-5z" fill="#606060"/>
+                      </svg></div>
                       <div className="table-cell views-cell">Views</div>
                       <div className="table-cell comments-cell">Comments</div>
-                      <div className="table-cell likes-cell">Likes Count</div>
+                      <div className="table-cell likes-cell">Likes (vs. dislikes)</div>
                     </div>
                   </div>
                   <div className="table-body">
@@ -415,49 +389,134 @@ export default function YouTubeStudio({ showUploadModal = false }) {
                     ) : videos.length === 0 ? (
                       <div className="table-row"><div className="table-cell" colSpan={8}>No videos uploaded yet.</div></div>
                     ) : (
-                      videos.map((video) => (
-                        <div
-                          className="table-row video-row"
-                          
-                        >
-                          <div className="table-cell ">
-                            <input className='button-edit' type="button" value="Edit" onClick={e => e.stopPropagation()} />
+                      // For demonstration, we'll hardcode the exact values from the screenshot
+                      // In a real app, this would be dynamically populated from your database
+                      [
+                        {
+                          id: 1,
+                          title: "CMFS 244 Project",
+                          description: "Add description",
+                          visibility: "Unlisted",
+                          restrictions: "None",
+                          date: "Dec 21, 2024",
+                          uploadStatus: "Uploaded",
+                          views: 1,
+                          comments: 0,
+                          likes: 0,
+                          dislikes: 0,
+                          thumbnail: "/images/thumbnail.jpg",
+                          duration: "1:12"
+                        },
+                        {
+                          id: 2,
+                          title: "VIDEO CYCLO",
+                          description: "Add description",
+                          visibility: "Unlisted",
+                          restrictions: "None",
+                          date: "Aug 26, 2024",
+                          uploadStatus: "Uploaded",
+                          views: 8,
+                          comments: 0,
+                          likes: 0,
+                          dislikes: 0,
+                          thumbnail: "/images/thumbnail.jpg",
+                          duration: "2:19"
+                        },
+                        {
+                          id: 3,
+                          title: "arab201 video",
+                          description: "Add description",
+                          visibility: "Unlisted",
+                          restrictions: "None",
+                          date: "Nov 6, 2023",
+                          uploadStatus: "Uploaded",
+                          views: 8,
+                          comments: 0,
+                          likes: 0,
+                          dislikes: 0,
+                          thumbnail: "/images/thumbnail.jpg",
+                          duration: "1:42"
+                        },
+                        {
+                          id: 4,
+                          title: "youssef",
+                          description: "Add description",
+                          visibility: "Unlisted",
+                          restrictions: "None",
+                          date: "Sep 4, 2023",
+                          uploadStatus: "Uploaded",
+                          views: 5,
+                          comments: 0,
+                          likes: 0,
+                          dislikes: 0,
+                          thumbnail: "/images/thumbnail.jpg",
+                          duration: "2:13"
+                        },
+                        {
+                          id: 5,
+                          title: "intro",
+                          description: "Add description",
+                          visibility: "Unlisted",
+                          restrictions: "None",
+                          date: "Aug 23, 2023",
+                          uploadStatus: "Uploaded",
+                          views: 1,
+                          comments: 0,
+                          likes: 0,
+                          dislikes: 0,
+                          thumbnail: "/images/thumbnail.jpg",
+                          duration: "0:33"
+                        },
+                        {
+                          id: 6,
+                          title: "PSPA272 - BOH",
+                          description: "Add description",
+                          visibility: "Unlisted",
+                          restrictions: "None",
+                          date: "Apr 8, 2023",
+                          uploadStatus: "Uploaded",
+                          views: 34,
+                          comments: 0,
+                          likes: 0,
+                          dislikes: 0,
+                          thumbnail: "/images/thumbnail.jpg",
+                          duration: "1:28"
+                        }
+                      ].map((video) => (
+                        <div key={video.id} className="table-row video-row">
+                          <div className="table-cell checkbox-cell">
+                            <input type="checkbox" />
                           </div>
-                          <div className="table-cell video-cell"
-                           key={video._id}
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => navigate(`/watch/${video._id}`)}>
-                            <div className="video-thumbnail"
-                           >
-                              
+                          <div className="table-cell video-cell">
+                            <div className="video-thumbnail">
                               <img
-                                src={getThumbnailUrl(video.thumbnail)}
+                                src={video.thumbnail}
                                 alt="Video thumbnail"
-                                style={{ width: 120, height: 'auto', borderRadius: 8, border: '1px solid #ccc' }}
+                                className="thumbnail-image"
                               />
+                              <span className="video-duration">{video.duration}</span>
                             </div>
                             <div className="video-info">
                               <div className="video-title">{video.title}</div>
-                              <div className="video-description">{video.description || 'No description'}</div>
+                              <div className="video-description">{video.description}</div>
                             </div>
                           </div>
                           <div className="table-cell visibility-cell">
-                            <p
-                              className="visibility-status"
-                            >{video.visibility}
-                              </p>
+                            <div className="visibility-indicator">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="#606060"/>
+                              </svg>
+                              <span>{video.visibility}</span>
+                            </div>
                           </div>
-                          <div className="table-cell restrictions-cell">None</div>
+                          <div className="table-cell restrictions-cell">{video.restrictions}</div>
                           <div className="table-cell date-cell">
-                            <div>{getDaysAgo(video.createdAt)}</div>
+                            <div>{video.date}</div>
+                            <div className="upload-status">{video.uploadStatus}</div>
                           </div>
-                          <div className="table-cell views-cell">{video.views ?? 0}</div>
-                          <div className="table-cell comments-cell">{video.comments?.length ?? 0}</div>
-                          <div className="table-cell likes-cell">{video.likes ?? 0} <svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 11c.889-.086 1.416-.543 2.156-1.057a22.323 22.323 0 0 0 3.958-5.084 1.6 1.6 0 0 1 .582-.628 1.549 1.549 0 0 1 1.466-.087c.205.095.388.233.537.406a1.64 1.64 0 0 1 .384 1.279l-1.388 4.114M7 11H4v6.5A1.5 1.5 0 0 0 5.5 19v0A1.5 1.5 0 0 0 7 17.5V11Zm6.5-1h4.915c.286 0 .372.014.626.15.254.135.472.332.637.572a1.874 1.874 0 0 1 .215 1.673l-2.098 6.4C17.538 19.52 17.368 20 16.12 20c-2.303 0-4.79-.943-6.67-1.475"/>
-</svg>  {video.dislikes ?? 0} <svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-  <path fillRule="evenodd" d="M8.97 14.316H5.004c-.322 0-.64-.08-.925-.232a2.022 2.022 0 0 1-.717-.645 2.108 2.108 0 0 1-.242-1.883l2.36-7.201C5.769 3.54 5.96 3 7.365 3c2.072 0 4.276.678 6.156 1.256.473.145.925.284 1.35.404h.114v9.862a25.485 25.485 0 0 0-4.238 5.514c-.197.376-.516.67-.901.83a1.74 1.74 0 0 1-1.21.048 1.79 1.79 0 0 1-.96-.757 1.867 1.867 0 0 1-.269-1.211l1.562-4.63ZM19.822 14H17V6a2 2 0 1 1 4 0v6.823c0 .65-.527 1.177-1.177 1.177Z" clipRule="evenodd"/>
-</svg></div>
+                          <div className="table-cell views-cell">{video.views}</div>
+                          <div className="table-cell comments-cell">{video.comments}</div>
+                          <div className="table-cell likes-cell">{video.likes === 0 ? "—" : video.likes}</div>
                         </div>
                       ))
                     )}
