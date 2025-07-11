@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './YouTubeStudio.css';
 
-// Helper to get the correct thumbnail URL
+// Helper to get the correct thumbnail URLde
 function getThumbnailUrl(thumbnail) {
   if (!thumbnail) return '/images/thumbnail.jpg';
   if (thumbnail.startsWith('/uploads/')) {
@@ -13,6 +12,7 @@ function getThumbnailUrl(thumbnail) {
 }
 
 // Helper for formatting date
+/*
 function formatDate(dateString) {
   const date = new Date(dateString);
   return date.toLocaleDateString(undefined, {
@@ -21,7 +21,7 @@ function formatDate(dateString) {
     day: 'numeric',
   });
 }
-
+*/
 // Helper for "days ago" formatting
 function getDaysAgo(dateString) {
   const date = new Date(dateString);
@@ -338,7 +338,6 @@ export default function YouTubeStudio({ showUploadModal = false }) {
                   <div className="table-header">
                     <div className="table-row">
                       <div className="table-cell checkbox-cell">
-                        <input type="checkbox" />
                       </div>
                       <div className="table-cell video-cell">Video</div>
                       <div className="table-cell visibility-cell">Visibility</div>
@@ -346,7 +345,7 @@ export default function YouTubeStudio({ showUploadModal = false }) {
                       <div className="table-cell date-cell">Date ↓</div>
                       <div className="table-cell views-cell">Views</div>
                       <div className="table-cell comments-cell">Comments</div>
-                      <div className="table-cell likes-cell">Likes (vs. dislikes)</div>
+                      <div className="table-cell likes-cell">Likes Count</div>
                     </div>
                   </div>
                   <div className="table-body">
@@ -360,15 +359,18 @@ export default function YouTubeStudio({ showUploadModal = false }) {
                       videos.map((video) => (
                         <div
                           className="table-row video-row"
-                          key={video._id}
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => navigate(`/watch/${video._id}`)}
+                          
                         >
-                          <div className="table-cell checkbox-cell">
-                            <input type="checkbox" onClick={e => e.stopPropagation()} />
+                          <div className="table-cell ">
+                            <input className='button-edit' type="button" value="Edit" onClick={e => e.stopPropagation()} />
                           </div>
-                          <div className="table-cell video-cell">
-                            <div className="video-thumbnail">
+                          <div className="table-cell video-cell"
+                           key={video._id}
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => navigate(`/watch/${video._id}`)}>
+                            <div className="video-thumbnail"
+                           >
+                              
                               <img
                                 src={getThumbnailUrl(video.thumbnail)}
                                 alt="Video thumbnail"
@@ -381,18 +383,22 @@ export default function YouTubeStudio({ showUploadModal = false }) {
                             </div>
                           </div>
                           <div className="table-cell visibility-cell">
-                            <span className={`visibility-status ${video.visibility}`}>
-                              {video.visibility ? video.visibility.charAt(0).toUpperCase() + video.visibility.slice(1) : 'Private'}
-                            </span>
+                            <p
+                              className="visibility-status"
+                            >{video.visibility}
+                              </p>
                           </div>
                           <div className="table-cell restrictions-cell">None</div>
                           <div className="table-cell date-cell">
                             <div>{getDaysAgo(video.createdAt)}</div>
-                            <div className="upload-status">Uploaded</div>
                           </div>
                           <div className="table-cell views-cell">{video.views ?? 0}</div>
                           <div className="table-cell comments-cell">{video.comments?.length ?? 0}</div>
-                          <div className="table-cell likes-cell">{video.likes?.length ?? 0} 👍 / {video.dislikes?.length ?? 0} 👎</div>
+                          <div className="table-cell likes-cell">{video.likes ?? 0} <svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 11c.889-.086 1.416-.543 2.156-1.057a22.323 22.323 0 0 0 3.958-5.084 1.6 1.6 0 0 1 .582-.628 1.549 1.549 0 0 1 1.466-.087c.205.095.388.233.537.406a1.64 1.64 0 0 1 .384 1.279l-1.388 4.114M7 11H4v6.5A1.5 1.5 0 0 0 5.5 19v0A1.5 1.5 0 0 0 7 17.5V11Zm6.5-1h4.915c.286 0 .372.014.626.15.254.135.472.332.637.572a1.874 1.874 0 0 1 .215 1.673l-2.098 6.4C17.538 19.52 17.368 20 16.12 20c-2.303 0-4.79-.943-6.67-1.475"/>
+</svg>  {video.dislikes ?? 0} <svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+  <path fillRule="evenodd" d="M8.97 14.316H5.004c-.322 0-.64-.08-.925-.232a2.022 2.022 0 0 1-.717-.645 2.108 2.108 0 0 1-.242-1.883l2.36-7.201C5.769 3.54 5.96 3 7.365 3c2.072 0 4.276.678 6.156 1.256.473.145.925.284 1.35.404h.114v9.862a25.485 25.485 0 0 0-4.238 5.514c-.197.376-.516.67-.901.83a1.74 1.74 0 0 1-1.21.048 1.79 1.79 0 0 1-.96-.757 1.867 1.867 0 0 1-.269-1.211l1.562-4.63ZM19.822 14H17V6a2 2 0 1 1 4 0v6.823c0 .65-.527 1.177-1.177 1.177Z" clipRule="evenodd"/>
+</svg></div>
                         </div>
                       ))
                     )}

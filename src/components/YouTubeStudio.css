@@ -377,6 +377,8 @@
 .video-cell {
   display: flex;
   align-items: center;
+  justify-content: center;
+  margin-left: 100px;
   gap: 12px;
 }
 
@@ -385,7 +387,6 @@
   width: 120px;
   height: 68px;
   border-radius: 4px;
-  overflow: hidden;
   flex-shrink: 0;
   background-color: #f0f0f0;
 }
@@ -409,7 +410,8 @@
 }
 
 .video-info {
-  flex: 1;
+  display: flex;
+  flex-direction: column ;
   min-width: 0;
 }
 
@@ -425,8 +427,10 @@
 
 .video-description {
   font-size: 12px;
+
   color: #606060;
   overflow: hidden;
+  margin-left: 100px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -499,6 +503,7 @@
 
 .video-cell {
   display: flex;
+
   align-items: center;
   gap: 12px;
 }
@@ -507,6 +512,7 @@
   width: 60px;
   height: 34px;
   object-fit: cover;
+  
   border-radius: 4px;
 }
 
@@ -516,6 +522,7 @@
 
 .video-title {
   font-weight: 500;
+  margin-left: 100px;
   margin-bottom: 4px;
   color: #0f0f0f;
 }
@@ -1055,6 +1062,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-right: 100px;
   gap: 8px;
   padding: 16px;
   border: 1px solid #e0e0e0;
@@ -1194,6 +1202,7 @@
 
 .video-info {
   border-top: 1px solid #e0e0e0;
+  
   padding-top: 16px;
 }
 
@@ -1301,3 +1310,34 @@
 .link-btn:hover {
   text-decoration: underline;
 }
+
+.edit-cell {
+  display: flex;
+  justify-content: center;
+  width: 80px;
+
+  margin-right: 100px;
+  align-items: center;
+
+}
+.button-edit{
+  all:unset;
+  cursor: pointer;
+  padding: 8px;
+  background-color: #065fd4;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  margin-left: 50px;
+  border-radius: 4px;
+  font-size: 14px;
+  width: 150px;
+  font-weight: 500;
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+button-edit:hover {
+  background-color: yellowgreen;
+}
+
+
+

@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
 import './login.css'; // ✅ Reuse the same styling file
 
-export default function Signup({ setUser }) {
+export default function Signup({ onLoginSuccess, onSwitchToLogin }) {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const navigate = useNavigate();
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -19,16 +17,10 @@ export default function Signup({ setUser }) {
         body: JSON.stringify({ username, email, password }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || data.msg || 'Signup failed');
+      if (!res.ok) throw new Error(data.msg || 'Signup failed');
 
-      // Auto-login after successful signup and store token
-      if (data.token) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('rememberMe', 'true'); // Auto-remember on signup
-      }
-      
-      setUser(data.user);
-      navigate('/'); // Navigate to home page
+      localStorage.setItem('token', data.token);
+      onLoginSuccess(data.user);
     } catch (err) {
       setError(err.message);
     }
@@ -65,7 +57,9 @@ export default function Signup({ setUser }) {
       {error && <p className="error">{error}</p>}
       <p>
         Already have an account?{' '}
-        <Link to="/login">Login</Link>
+        <button type="button" onClick={onSwitchToLogin}>
+          Login
+        </button>
       </p>
     </div>
   );

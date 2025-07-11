@@ -664,4 +664,23 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
+// Update video views
+// @route   POST /api/videos/:id/view
+// @access  Public
+router.post('/:id/view', async (req, res) => {
+  try {
+    const video = await Video.findById(req.params.id);
+    if (!video) {
+      return res.status(404).json({ success: false, message: 'Video not found' });
+    }
+
+    video.views += 1;
+    await video.save();
+
+    res.json({ success: true, views: video.views });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error updating video views' });
+  }
+});
+
 module.exports = router;
