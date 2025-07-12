@@ -15,6 +15,7 @@ import WatchLater from './components/WatchLater';
 import LikedVideos from './components/LikedVideos';
 import Login from './components/login';
 import Signup from './components/signup';
+import EditProfile from './components/EditProfile';
 import YouTubeStudio from './components/YouTubeStudio';
 import VideoEdit from './components/VideoEdit';
 import { SidebarProvider, useSidebar } from './context/SidebarContext';
@@ -30,6 +31,9 @@ function MainAppContent({ user, setUser }) {
         <Route path="/studio" element={<YouTubeStudio />} />
         <Route path="/studio/video/edit/:videoId" element={<VideoEdit />} />
         <Route path="/studio/*" element={<YouTubeStudio />} />
+        
+        {/* Profile Management - full screen layout */}
+        <Route path="/profile/edit" element={<EditProfile user={user} setUser={setUser} />} />
         
         {/* Main App Routes with Sidebar and Topbar */}
         <Route path="/*" element={

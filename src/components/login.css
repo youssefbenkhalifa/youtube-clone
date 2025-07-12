@@ -1,7 +1,7 @@
 .auth-container {
-  max-width: 400px;
+  max-width: 500px;
   margin: 80px auto;
-  padding: 20px;
+  padding: 30px;
   background: white;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -20,29 +20,201 @@
   align-items: stretch;
 }
 
-.auth-container input {
-  margin-bottom: 10px;
-  padding: 10px;
+.auth-container input,
+.auth-container select {
+  margin-bottom: 15px;
+  padding: 12px;
   font-size: 14px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: inherit;
+}
+
+.auth-container input:focus,
+.auth-container select:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
 }
 
 .auth-container label {
-  margin-bottom: 10px;
+  margin-bottom: 5px;
   font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
+  display: block;
+  text-align: left;
+  font-weight: 500;
+  color: #333;
 }
 
 .auth-container button {
-  padding: 10px;
-  background: red;
+  padding: 12px;
+  background: #1976d2;
   color: white;
   border: none;
+  border-radius: 4px;
   cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.auth-container button:hover {
+  background: #1565c0;
 }
 
 .auth-container .error {
-  color: red;
+  color: #d32f2f;
   margin-top: 10px;
+  padding: 10px;
+  background: #ffebee;
+  border-radius: 4px;
+  border: 1px solid #ffcdd2;
+}
+
+/* Signup Form Specific Styles */
+.signup-form {
+  text-align: left;
+}
+
+.profile-upload-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 25px;
+}
+
+.profile-preview {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid #ddd;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.profile-preview:hover {
+  border-color: #1976d2;
+}
+
+.profile-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  cursor: pointer;
+  color: white;
+  font-size: 12px;
+  gap: 5px;
+}
+
+.profile-preview:hover .upload-overlay {
+  opacity: 1;
+}
+
+.name-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  margin-bottom: 8px;
+}
+
+/* Profile Edit Page Styles */
+.profile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #f8f8f8;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  color: #606060;
+  text-decoration: none;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.back-button:hover {
+  background: #e8e8e8;
+}
+
+.profile-subtitle {
+  color: #666;
+  margin-bottom: 30px;
+  font-size: 16px;
+}
+
+.success {
+  color: #4caf50;
+  background: #e8f5e8;
+  padding: 10px;
+  border-radius: 4px;
+  margin: 10px 0;
+  border: 1px solid #4caf50;
+}
+
+.profile-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.cancel-button {
+  padding: 12px 24px;
+  background: #f8f8f8;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.cancel-button:hover {
+  background: #e8e8e8;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+  .auth-container {
+    margin: 20px;
+    padding: 20px;
+    max-width: none;
+  }
+  
+  .name-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
 }

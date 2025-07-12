@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './Topbar.css';
 import { useSidebar } from '../context/SidebarContext';
 
-export default function Topbar(user, setUser) {
+export default function Topbar({ user, setUser }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   //const [showMenu, setShowMenu] = useState(false);
@@ -51,6 +51,11 @@ export default function Topbar(user, setUser) {
   
   const handleStudioNavigation = () => {
     navigate('/studio');
+    setIsDropdownOpen(false);
+  };
+  
+  const handleProfileNavigation = () => {
+    navigate('/profile/edit');
     setIsDropdownOpen(false);
   };
   
@@ -230,7 +235,9 @@ export default function Topbar(user, setUser) {
         <div className="user-avatar-container" ref={dropdownRef}>
           <div className="user-avatar" onClick={toggleDropdown}>
             <img
-              src="/images/user.jpg"
+              src={user?.profilePicture?.startsWith('/uploads/') 
+                ? `http://localhost:5000${user.profilePicture}` 
+                : user?.profilePicture || "/images/user.jpg"}
               alt="User Avatar"
               className="avatar-image"
             />
@@ -240,14 +247,16 @@ export default function Topbar(user, setUser) {
               <div className="dropdown-header">
                 <div className="dropdown-user-info">
                   <img
-                    src="/images/user.jpg"
+                    src={user?.profilePicture?.startsWith('/uploads/') 
+                      ? `http://localhost:5000${user.profilePicture}` 
+                      : user?.profilePicture || "/images/user.jpg"}
                     alt="User Avatar"
                     className="dropdown-avatar"
                   />
                   <div className="dropdown-user-details">
-                    <div className="dropdown-username">John Doe</div>
-                    <div className="dropdown-email">john.doe@example.com</div>
-                    <div className="dropdown-manage-account">Manage your Google Account</div>
+                    <div className="dropdown-username">{user?.username || 'Guest User'}</div>
+                    <div className="dropdown-email">{user?.email || 'user@example.com'}</div>
+                    <div className="dropdown-manage-account" onClick={handleProfileNavigation}>Manage your Google Account</div>
                   </div>
                 </div>
               </div>

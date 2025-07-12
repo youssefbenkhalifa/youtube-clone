@@ -153,4 +153,4 @@ VideoSchema.index({ uploader: 1, createdAt: -1 });
 VideoSchema.index({ visibility: 1, createdAt: -1 });
 VideoSchema.index({ title: 'text', description: 'text', tags: 'text' });
 
-module.exports = mongoose.model('Video', VideoSchema);
+module.exports = mongoose.models.Video || mongoose.model('Video', VideoSchema);

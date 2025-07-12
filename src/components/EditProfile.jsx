@@ -1,16 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './login.css'; // ✅ Reuse the same styling file
+import './login.css'; // Reuse the same styling
 
-export default function Signup({ setUser }) {
+export default function EditProfile({ user, setUser }) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     username: '',
     email: '',
-    password: '',
-    confirmPassword: '',
     dateOfBirth: '',
     gender: '',
     country: '',
@@ -18,7 +16,9 @@ export default function Signup({ setUser }) {
     profilePicture: null
   });
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [profilePreview, setProfilePreview] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const countries = [
     "Afghanistan",
@@ -271,12 +271,36 @@ export default function Signup({ setUser }) {
 	"Åland Islands"
   ];
 
+  // Load user data when component mounts
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        username: user.username || '',
+        email: user.email || '',
+        dateOfBirth: user.dateOfBirth ? user.dateOfBirth.split('T')[0] : '', // Format date for input
+        gender: user.gender || '',
+        country: user.country || '',
+        phoneNumber: user.phoneNumber || '',
+        profilePicture: null
+      });
+      setProfilePreview(
+        user.profilePicture?.startsWith('/uploads/') 
+          ? `http://localhost:5000${user.profilePicture}` 
+          : user.profilePicture || null
+      );
+    }
+  }, [user]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+    setError('');
+    setSuccess('');
   };
 
   const handleFileChange = (e) => {
@@ -296,35 +320,11 @@ export default function Signup({ setUser }) {
     }
   };
 
-  const handleSignup = async (e) => {
+  const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setError('');
-
-    // Validation
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      return;
-    }
-
-    // Calculate age
-    const today = new Date();
-    const birthDate = new Date(formData.dateOfBirth);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-
-    if (age < 13) {
-      setError('You must be at least 13 years old to create an account');
-      return;
-    }
+    setSuccess('');
+    setLoading(true);
 
     try {
       // Create FormData for file upload
@@ -333,7 +333,6 @@ export default function Signup({ setUser }) {
       submitData.append('lastName', formData.lastName);
       submitData.append('username', formData.username);
       submitData.append('email', formData.email);
-      submitData.append('password', formData.password);
       submitData.append('dateOfBirth', formData.dateOfBirth);
       submitData.append('gender', formData.gender);
       submitData.append('country', formData.country);
@@ -343,27 +342,54 @@ export default function Signup({ setUser }) {
         submitData.append('profilePicture', formData.profilePicture);
       }
 
-      const res = await fetch('http://localhost:5000/api/auth/signup', {
-        method: 'POST',
-        body: submitData // Don't set Content-Type header for FormData
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/user/profile', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: submitData
       });
       
       const data = await res.json();
-      if (!res.ok) throw new Error(data.msg || 'Signup failed');
+      if (!res.ok) throw new Error(data.msg || 'Update failed');
 
-      localStorage.setItem('token', data.token);
+      // Update user state
       setUser(data.user);
-      navigate('/');
+      setSuccess('Profile updated successfully!');
+      
+      // Reset file input
+      setFormData(prev => ({
+        ...prev,
+        profilePicture: null
+      }));
+      
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
+  if (!user) {
+    navigate('/login');
+    return null;
+  }
+
   return (
     <div className="auth-container">
-      <img src="/images/youtube-logo.png" alt="YouTube" className="auth-logo" />
-      <h2>Create your YouTube account</h2>
-      <form onSubmit={handleSignup} className="signup-form">
+      <div className="profile-header">
+        <button className="back-button" onClick={() => navigate('/')}>
+          <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 299 511.517"><path fill="#fff" d="M286.421 436.254c36.893 64.703-15.581 96.095-51.926 60.146L25.08 295.723c-33.44-33.439-33.44-46.49 0-79.93L234.495 15.117c36.345-35.949 88.819-4.557 51.926 60.145L189.16 255.758l97.261 180.496z"/></svg>
+          Back to Home
+        </button>
+        <img src="/images/youtube-logo.png" alt="YouTube" className="auth-logo" />
+      </div>
+      
+      <h2>Manage your Account</h2>
+      <p className="profile-subtitle">Update your personal information</p>
+      
+      <form onSubmit={handleUpdateProfile} className="signup-form">
         
         {/* Profile Picture Upload */}
         <div className="profile-upload-section">
@@ -375,9 +401,9 @@ export default function Signup({ setUser }) {
             />
             <label htmlFor="profilePicture" className="upload-overlay">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L19 5L17 7V9C17 10.1 16.1 11 15 11H9C7.9 11 7 10.1 7 9V7L5 5L3 7V9C3 10.1 3.9 11 5 11H6V17C6 18.1 6.9 19 8 19H16C17.1 19 18 18.1 18 17V11H19C20.1 11 21 10.1 21 9Z" fill="white"/>
+                <path d="M3 4V1H5V4H8V6H5V9H3V6H0V4H3ZM6 10V7H9V4H16L17.83 6H21C21.6 6 22 6.4 22 7V19C22 19.6 21.6 20 21 20H5C4.4 20 4 19.6 4 19V10H6ZM13 17C15.8 17 18 14.8 18 12S15.8 7 13 7S8 9.2 8 12S10.2 17 13 17ZM13 15C11.3 15 10 13.7 10 12S11.3 9 13 9S16 10.3 16 12S14.7 15 13 15Z" fill="white"/>
               </svg>
-              <span>Add Photo</span>
+              <span>Change Photo</span>
             </label>
           </div>
           <input
@@ -430,25 +456,6 @@ export default function Signup({ setUser }) {
           required
         />
 
-        {/* Password Fields */}
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleInputChange}
-          required
-          minLength="6"
-        />
-        <input
-          type="password"
-          name="confirmPassword"
-          placeholder="Confirm password"
-          value={formData.confirmPassword}
-          onChange={handleInputChange}
-          required
-        />
-
         {/* Date of Birth */}
         <div className="form-group">
           <label htmlFor="dateOfBirth">Date of Birth</label>
@@ -495,7 +502,7 @@ export default function Signup({ setUser }) {
           </select>
         </div>
 
-        {/* Phone Number (Optional) */}
+        {/* Phone Number */}
         <input
           type="tel"
           name="phoneNumber"
@@ -504,15 +511,19 @@ export default function Signup({ setUser }) {
           onChange={handleInputChange}
         />
 
-        <button type="submit">Create Account</button>
-      </form>
-      {error && <p className="error">{error}</p>}
-      <p>
-        Already have an account?{' '}
-        <button type="button" onClick={() => navigate('/login')}>
-          Sign in
+        <button type="submit" disabled={loading}>
+          {loading ? 'Updating...' : 'Update Profile'}
         </button>
-      </p>
+      </form>
+      
+      {error && <p className="error">{error}</p>}
+      {success && <p className="success">{success}</p>}
+      
+      <div className="profile-actions">
+        <button type="button" onClick={() => navigate('/')} className="cancel-button">
+          Cancel
+        </button>
+      </div>
     </div>
   );
 }
