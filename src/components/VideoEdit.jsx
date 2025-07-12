@@ -24,6 +24,7 @@ export default function VideoEdit() {
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   
   // Form states
   const [title, setTitle] = useState('');
@@ -65,7 +66,12 @@ export default function VideoEdit() {
     }
   }, [videoId]);
 
+  const initiateHandleSave = () => {
+    setShowConfirmDialog(true);
+  };
+
   const handleSave = async () => {
+    setShowConfirmDialog(false);
     setSaving(true);
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
@@ -89,7 +95,15 @@ export default function VideoEdit() {
 
       const data = await response.json();
       if (data.success) {
-        alert('Video updated successfully!');
+        // Show success toast instead of alert
+        const successToast = document.createElement('div');
+        successToast.className = 'toast success-toast';
+        successToast.textContent = 'Changes saved';
+        document.body.appendChild(successToast);
+        setTimeout(() => {
+          document.body.removeChild(successToast);
+        }, 3000);
+        
         setVideo(prev => ({ 
           ...prev, 
           title, 
@@ -101,10 +115,22 @@ export default function VideoEdit() {
           setThumbnailPreview(getThumbnailUrl(data.data.thumbnail));
         }
       } else {
-        alert('Failed to update video: ' + (data.message || 'Unknown error'));
+        const errorToast = document.createElement('div');
+        errorToast.className = 'toast error-toast';
+        errorToast.textContent = 'Failed to save changes: ' + (data.message || 'Unknown error');
+        document.body.appendChild(errorToast);
+        setTimeout(() => {
+          document.body.removeChild(errorToast);
+        }, 5000);
       }
     } catch (err) {
-      alert('Failed to update video: ' + err.message);
+      const errorToast = document.createElement('div');
+      errorToast.className = 'toast error-toast';
+      errorToast.textContent = 'Failed to save changes: ' + err.message;
+      document.body.appendChild(errorToast);
+      setTimeout(() => {
+        document.body.removeChild(errorToast);
+      }, 5000);
     } finally {
       setSaving(false);
     }
@@ -122,12 +148,69 @@ export default function VideoEdit() {
     navigate('/studio');
   };
 
+  const handleCloseDialog = () => {
+    setShowConfirmDialog(false);
+  };
+
+  // Add keyboard shortcut for saving (Ctrl+S)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (!saving) {
+          initiateHandleSave();
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [saving]);
+
+  // Effect to handle page scrolling when component mounts/unmounts
+  useEffect(() => {
+    // Add classes to enable full page scrolling
+    document.body.classList.add('video-edit-page-body');
+    const appElement = document.querySelector('.App');
+    if (appElement) {
+      appElement.classList.add('video-edit-page-app');
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.classList.remove('video-edit-page-body');
+      if (appElement) {
+        appElement.classList.remove('video-edit-page-app');
+      }
+    };
+  }, []);
+
   if (loading) return <div className="video-edit-loading">Loading...</div>;
   if (error) return <div className="video-edit-error">Error: {error}</div>;
   if (!video) return <div className="video-edit-error">Video not found</div>;
 
   return (
     <div className="video-edit">
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div className="confirm-dialog-overlay">
+          <div className="confirm-dialog">
+            <h3>Save changes?</h3>
+            <p>Your changes to this video will be visible to viewers. Do you want to save these changes?</p>
+            <div className="dialog-buttons">
+              <button className="dialog-btn-cancel" onClick={handleCloseDialog}>
+                Cancel
+              </button>
+              <button className="dialog-btn-confirm" onClick={handleSave}>
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Header */}
       <div className="video-edit-header">
         <div className="header-left">
@@ -147,8 +230,9 @@ export default function VideoEdit() {
           </button>
           <button 
             className="save-btn" 
-            onClick={handleSave}
+            onClick={initiateHandleSave}
             disabled={saving}
+            title="Save changes (Ctrl+S)"
           >
             {saving ? 'Saving...' : 'Save'}
           </button>
@@ -272,8 +356,9 @@ export default function VideoEdit() {
                       id="description"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Tell viewers about your video (type @ to mention a channel)"
+                      placeholder="Tell viewers about your video. Include keywords to help people find your video. Type @ to mention a channel, # to add a hashtag"
                       rows={8}
+                      maxLength={5000}
                     />
                   </div>
 
@@ -284,39 +369,32 @@ export default function VideoEdit() {
                       <button className="link-btn">Learn more</button>
                     </p>
                     
-                    <div className="thumbnail-options">
-                      <div className="thumbnail-upload">
-                        <input
-                          type="file"
-                          id="thumbnail-upload"
-                          accept="image/*"
-                          onChange={handleThumbnailChange}
-                          style={{ display: 'none' }}
+                    <div className="thumbnail-container">
+                      <div className="thumbnail-preview">
+                        <img 
+                          src={thumbnailPreview} 
+                          alt="Video thumbnail" 
                         />
-                        <label htmlFor="thumbnail-upload" className="upload-btn">
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z" fill="currentColor"/>
-                          </svg>
-                          Upload file
-                        </label>
                       </div>
                       
-                      <div className="auto-generated">
-                        <button className="thumbnail-option">
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14h-7v-2h7v2zm3-4H5v-2h12v2zm0-4H5V7h12v2z" fill="currentColor"/>
-                          </svg>
-                          Auto-generated
-                        </button>
-                      </div>
+                      <div className="thumbnail-options">
+                        <div className="thumbnail-upload">
+                          <input
+                            type="file"
+                            id="thumbnail-upload"
+                            accept="image/*"
+                            onChange={handleThumbnailChange}
+                            style={{ display: 'none' }}
+                          />
+                          <label htmlFor="thumbnail-upload" className="upload-btn">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                              <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z" fill="currentColor"/>
+                            </svg>
+                            Upload file
+                          </label>
+                        </div>
+                        
 
-                      <div className="test-compare">
-                        <button className="thumbnail-option">
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path d="M9 11H7v6h2v-6zm4 0h-2v6h2v-6zm4 0h-2v6h2v-6zm2-7H3v2h2v13c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V6h2V4zm-4 15H7V6h8v13z" fill="currentColor"/>
-                          </svg>
-                          Test & compare
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -331,6 +409,8 @@ export default function VideoEdit() {
                       <option>Select</option>
                     </select>
                   </div>
+                  
+                  <div className="form-divider"></div>
 
                   <div className="form-group">
                     <label>Audience</label>
@@ -393,15 +473,73 @@ export default function VideoEdit() {
 
                   <div className="visibility-section">
                     <label>Visibility</label>
-                    <select 
-                      value={visibility} 
-                      onChange={(e) => setVisibility(e.target.value)}
-                      className="visibility-select"
-                    >
-                      <option value="private">Private</option>
-                      <option value="unlisted">Unlisted</option>
-                      <option value="public">Public</option>
-                    </select>
+                    <div className="visibility-options">
+                      <div className="visibility-option">
+                        <input 
+                          type="radio" 
+                          id="visibility-public" 
+                          name="visibility" 
+                          value="public" 
+                          checked={visibility === 'public'} 
+                          onChange={(e) => setVisibility(e.target.value)}
+                        />
+                        <label htmlFor="visibility-public" className="radio-label">
+                          <div className="visibility-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" fill="currentColor"/>
+                            </svg>
+                          </div>
+                          <div className="visibility-details">
+                            <h3>Public</h3>
+                            <p>Everyone can watch your video</p>
+                          </div>
+                        </label>
+                      </div>
+                      
+                      <div className="visibility-option">
+                        <input 
+                          type="radio" 
+                          id="visibility-unlisted" 
+                          name="visibility" 
+                          value="unlisted" 
+                          checked={visibility === 'unlisted'} 
+                          onChange={(e) => setVisibility(e.target.value)}
+                        />
+                        <label htmlFor="visibility-unlisted" className="radio-label">
+                          <div className="visibility-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                              <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" fill="currentColor"/>
+                            </svg>
+                          </div>
+                          <div className="visibility-details">
+                            <h3>Unlisted</h3>
+                            <p>Anyone with the link can watch</p>
+                          </div>
+                        </label>
+                      </div>
+                      
+                      <div className="visibility-option">
+                        <input 
+                          type="radio" 
+                          id="visibility-private" 
+                          name="visibility" 
+                          value="private" 
+                          checked={visibility === 'private'} 
+                          onChange={(e) => setVisibility(e.target.value)}
+                        />
+                        <label htmlFor="visibility-private" className="radio-label">
+                          <div className="visibility-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                              <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h2c0-1.66 1.34-3 3-3s3 1.34 3 3v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z" fill="currentColor"/>
+                            </svg>
+                          </div>
+                          <div className="visibility-details">
+                            <h3>Private</h3>
+                            <p>Only you can watch</p>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="restrictions-section">
@@ -448,6 +586,17 @@ export default function VideoEdit() {
                       </button>
                     </div>
                   </div>
+                </div>
+                
+                {/* Save Changes Button at Bottom */}
+                <div className="bottom-save-section">
+                  <button 
+                    className="bottom-save-btn" 
+                    onClick={initiateHandleSave}
+                    disabled={saving}
+                  >
+                    {saving ? 'Saving Changes...' : 'Save Changes'}
+                  </button>
                 </div>
               </div>
             </div>

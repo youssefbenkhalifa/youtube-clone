@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import './Topbar.css';
 import { useSidebar } from '../context/SidebarContext';
 
-export default function Topbar() {
+export default function Topbar(user, setUser) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const [showMenu, setShowMenu] = useState(false);
+  //const [showMenu, setShowMenu] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const { toggleSidebar } = useSidebar();
@@ -54,28 +54,37 @@ export default function Topbar() {
     setIsDropdownOpen(false);
   };
   
-  const handleLogout = () => {
-    // Handle logout functionality
-    alert('Logout functionality would be implemented here');
-    setIsDropdownOpen(false);
+    const handleLogout = () => {
+    // Clear all stored tokens
+    localStorage.removeItem('token');
+    localStorage.removeItem('rememberMe');
+    sessionStorage.removeItem('token');
+    
+    // Clear user state
+    setUser(null);
+    
+    // Navigate to login
+    navigate('/login');
   };
-  
-  // Close dropdown when clicking outside
+
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
       }
       if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
         setIsNotificationsOpen(false);
       }
-    };
-    
-    document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    if (isDropdownOpen || isNotificationsOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []);
+  }, [isDropdownOpen, isNotificationsOpen]);
 
   return (
     <div className="topbar">

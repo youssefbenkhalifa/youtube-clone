@@ -5,12 +5,14 @@ body {
   padding: 0;
   background-color: #f9f9f9;
   color: #030303;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 .app {
   display: flex;
   height: 100vh;
   background-color: #f9f9f9;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 /* Sidebar */
@@ -114,25 +116,31 @@ body {
   margin-left: 240px;
   margin-top: 56px;
   overflow-y: auto;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
   background-color: #f9f9f9;
   min-height: calc(100vh - 56px);
   transition: margin-left 0.3s ease;
+  width: calc(100vw - 240px); /* Ensure proper width calculation */
+  box-sizing: border-box;
 }
 
 /* Collapsed sidebar layout */
 .collapsed-sidebar .main {
   margin-left: 72px;
+  width: calc(100vw - 72px); /* Adjust width for collapsed sidebar */
 }
 
 @media (max-width: 1200px) {
   .main {
     margin-left: 72px;
+    width: calc(100vw - 72px);
   }
 }
 
 @media (max-width: 768px) {
   .main {
     margin-left: 0;
+    width: 100vw;
   }
 }
 
@@ -236,19 +244,6 @@ body {
   display: grid;
   gap: 16px;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-}
-
-.video-card {
-  width: 100%;
-}
-
-.thumbnail {
-  width: 100%;
-  border-radius: 8px;
-}
-
-.video-info {
-  margin-top: 8px;
 }
 
 .video-title {

@@ -408,47 +408,6 @@ router.get('/my', auth, async (req, res) => {
   }
 });
 
-// @route   GET /api/videos/:id
-// @desc    Get a single video by ID
-// @access  Public
-// @route   GET /api/videos/my
-// @desc    Get current user's videos
-// @access  Private
-router.get('/my', auth, async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const skip = (page - 1) * limit;
-
-    const videos = await Video.find({ uploader: req.user.id })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .select('-filePath');
-
-    const total = await Video.countDocuments({ uploader: req.user.id });
-
-    res.json({
-      success: true,
-      data: videos,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    });
-
-  } catch (error) {
-    console.error('Error fetching user videos:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching videos',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
-});
-
 // This must be last: get video by id (ensure this is the last route, after /:id/comments)
 router.get('/:id', optionalAuth, async (req, res) => {
   try {

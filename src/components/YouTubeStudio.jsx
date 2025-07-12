@@ -3,9 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import './YouTubeStudio.css';
 
 // Helper to get the correct thumbnail URL
-// This function is kept for future reference but not currently used
-// since we're using hardcoded data
-/* 
 function getThumbnailUrl(thumbnail) {
   if (!thumbnail) return '/images/thumbnail.jpg';
   if (thumbnail.startsWith('/uploads/')) {
@@ -13,10 +10,8 @@ function getThumbnailUrl(thumbnail) {
   }
   return thumbnail;
 }
-*/
 
 // Helper for formatting date
-/*
 function formatDate(dateString) {
   const date = new Date(dateString);
   return date.toLocaleDateString(undefined, {
@@ -25,11 +20,8 @@ function formatDate(dateString) {
     day: 'numeric',
   });
 }
-*/
+
 // Helper for "days ago" formatting
-// This function is kept for future reference but not currently used
-// since we're using hardcoded data
-/*
 function getDaysAgo(dateString) {
   const date = new Date(dateString);
   const now = new Date();
@@ -39,7 +31,14 @@ function getDaysAgo(dateString) {
   if (diffDays === 1) return '1 day ago';
   return `${diffDays} days ago`;
 }
-*/
+
+// Helper to format video duration
+function formatDuration(seconds) {
+  if (!seconds) return "0:00";
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
 
 export default function YouTubeStudio({ showUploadModal = false }) {
   const navigate = useNavigate();
@@ -75,11 +74,33 @@ export default function YouTubeStudio({ showUploadModal = false }) {
         });
         const data = await res.json();
         if (data.success) {
-          setVideos(data.data);
+          // Process videos to get the required format
+          const processedVideos = data.data.map(video => ({
+            id: video._id,
+            title: video.title,
+            description: video.description || "Add description",
+            visibility: video.visibility || "Unlisted",
+            restrictions: "None",
+            date: formatDate(video.createdAt),
+            uploadStatus: "Uploaded",
+            views: video.views || 0,
+            comments: video.comments?.length || 0,
+            likes: video.likes || 0,
+            dislikes: video.dislikes || 0,
+            thumbnail: video.thumbnail || "/images/thumbnail.jpg",
+            duration: formatDuration(video.duration),
+            createdAt: video.createdAt // Keep original date for sorting
+          }));
+          
+          // Sort by most recent first
+          processedVideos.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          
+          setVideos(processedVideos);
         } else {
           setVideoError(data.message || 'Failed to fetch videos');
         }
       } catch (err) {
+        console.error('Error fetching videos:', err);
         setVideoError('Failed to fetch videos');
       } finally {
         setLoadingVideos(false);
@@ -243,6 +264,13 @@ export default function YouTubeStudio({ showUploadModal = false }) {
       alert('Error publishing video: ' + error.message);
     }
   };
+  
+  const handleEditVideo = (videoId) => {
+    // Navigate to the video edit page
+    navigate(`/studio/video/edit/${videoId}`);
+  };
+
+
 
   return (
     <div className="youtube-studio">
@@ -371,7 +399,7 @@ export default function YouTubeStudio({ showUploadModal = false }) {
                         <input type="checkbox" />
                       </div>
                       <div className="table-cell video-cell">Video</div>
-                      <div className="table-cell visibility-cell">Visibility</div>
+                      <div className="table-cell visibility-cell visb" >Visibility</div>
                       <div className="table-cell restrictions-cell">Restrictions</div>
                       <div className="table-cell date-cell">Date <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
                         <path d="M7 10l5 5 5-5z" fill="#606060"/>
@@ -379,110 +407,18 @@ export default function YouTubeStudio({ showUploadModal = false }) {
                       <div className="table-cell views-cell">Views</div>
                       <div className="table-cell comments-cell">Comments</div>
                       <div className="table-cell likes-cell">Likes (vs. dislikes)</div>
+                      <div className="table-cell edit-cell">Edit</div>
                     </div>
                   </div>
                   <div className="table-body">
                     {loadingVideos ? (
-                      <div className="table-row"><div className="table-cell" colSpan={8}>Loading...</div></div>
+                      <div className="table-row"><div className="table-cell" colSpan={9}>Loading...</div></div>
                     ) : videoError ? (
-                      <div className="table-row"><div className="table-cell" colSpan={8}>{videoError}</div></div>
+                      <div className="table-row"><div className="table-cell" colSpan={9}>{videoError}</div></div>
                     ) : videos.length === 0 ? (
-                      <div className="table-row"><div className="table-cell" colSpan={8}>No videos uploaded yet.</div></div>
+                      <div className="table-row"><div className="table-cell" colSpan={9}>No videos uploaded yet.</div></div>
                     ) : (
-                      // For demonstration, we'll hardcode the exact values from the screenshot
-                      // In a real app, this would be dynamically populated from your database
-                      [
-                        {
-                          id: 1,
-                          title: "CMFS 244 Project",
-                          description: "Add description",
-                          visibility: "Unlisted",
-                          restrictions: "None",
-                          date: "Dec 21, 2024",
-                          uploadStatus: "Uploaded",
-                          views: 1,
-                          comments: 0,
-                          likes: 0,
-                          dislikes: 0,
-                          thumbnail: "/images/thumbnail.jpg",
-                          duration: "1:12"
-                        },
-                        {
-                          id: 2,
-                          title: "VIDEO CYCLO",
-                          description: "Add description",
-                          visibility: "Unlisted",
-                          restrictions: "None",
-                          date: "Aug 26, 2024",
-                          uploadStatus: "Uploaded",
-                          views: 8,
-                          comments: 0,
-                          likes: 0,
-                          dislikes: 0,
-                          thumbnail: "/images/thumbnail.jpg",
-                          duration: "2:19"
-                        },
-                        {
-                          id: 3,
-                          title: "arab201 video",
-                          description: "Add description",
-                          visibility: "Unlisted",
-                          restrictions: "None",
-                          date: "Nov 6, 2023",
-                          uploadStatus: "Uploaded",
-                          views: 8,
-                          comments: 0,
-                          likes: 0,
-                          dislikes: 0,
-                          thumbnail: "/images/thumbnail.jpg",
-                          duration: "1:42"
-                        },
-                        {
-                          id: 4,
-                          title: "youssef",
-                          description: "Add description",
-                          visibility: "Unlisted",
-                          restrictions: "None",
-                          date: "Sep 4, 2023",
-                          uploadStatus: "Uploaded",
-                          views: 5,
-                          comments: 0,
-                          likes: 0,
-                          dislikes: 0,
-                          thumbnail: "/images/thumbnail.jpg",
-                          duration: "2:13"
-                        },
-                        {
-                          id: 5,
-                          title: "intro",
-                          description: "Add description",
-                          visibility: "Unlisted",
-                          restrictions: "None",
-                          date: "Aug 23, 2023",
-                          uploadStatus: "Uploaded",
-                          views: 1,
-                          comments: 0,
-                          likes: 0,
-                          dislikes: 0,
-                          thumbnail: "/images/thumbnail.jpg",
-                          duration: "0:33"
-                        },
-                        {
-                          id: 6,
-                          title: "PSPA272 - BOH",
-                          description: "Add description",
-                          visibility: "Unlisted",
-                          restrictions: "None",
-                          date: "Apr 8, 2023",
-                          uploadStatus: "Uploaded",
-                          views: 34,
-                          comments: 0,
-                          likes: 0,
-                          dislikes: 0,
-                          thumbnail: "/images/thumbnail.jpg",
-                          duration: "1:28"
-                        }
-                      ].map((video) => (
+                      videos.map((video) => (
                         <div key={video.id} className="table-row video-row">
                           <div className="table-cell checkbox-cell">
                             <input type="checkbox" />
@@ -490,11 +426,10 @@ export default function YouTubeStudio({ showUploadModal = false }) {
                           <div className="table-cell video-cell">
                             <div className="video-thumbnail">
                               <img
-                                src={video.thumbnail}
+                                src={getThumbnailUrl(video.thumbnail)}
                                 alt="Video thumbnail"
                                 className="thumbnail-image"
                               />
-                              <span className="video-duration">{video.duration}</span>
                             </div>
                             <div className="video-info">
                               <div className="video-title">{video.title}</div>
@@ -510,12 +445,20 @@ export default function YouTubeStudio({ showUploadModal = false }) {
                             </div>
                           </div>
                           <div className="table-cell restrictions-cell">{video.restrictions}</div>
-                          <div className="table-cell date-cell">
-                            <div>{video.date}</div>
-                          </div>
+                          <div className="table-cell date-cell">                            <div>{video.date}</div>
+                            <div className="upload-status">{video.createdAt ? getDaysAgo(video.createdAt) : video.uploadStatus}</div>
+                            </div>
                           <div className="table-cell views-cell">{video.views}</div>
                           <div className="table-cell comments-cell">{video.comments}</div>
                           <div className="table-cell likes-cell">{video.likes === 0 ? "—" : video.likes}</div>
+                          <div className="table-cell edit-cell">
+                            <button className="button-edit" onClick={() => handleEditVideo(video.id)}>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="white"/>
+                              </svg>
+                              <span>Edit</span>
+                            </button>
+                          </div>
                         </div>
                       ))
                     )}
@@ -524,7 +467,7 @@ export default function YouTubeStudio({ showUploadModal = false }) {
 
                 <div className="table-pagination">
                   <span>Rows per page: 30</span>
-                  <span>1 - 6 of 6</span>
+                  <span>{videos.length > 0 ? `1 - ${videos.length} of ${videos.length}` : '0 of 0'}</span>
                   <div className="pagination-controls">
                     <button disabled>‹</button>
                     <button disabled>›</button>
