@@ -1,0 +1,45 @@
+.channel-selector {
+  margin-bottom: 20px;
+}
+
+.channel-selector label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+}
+
+.channel-select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: #fff;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+}
+
+.channel-select:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+.channel-selector-loading,
+.channel-selector-error {
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.channel-selector-loading {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+.channel-selector-error {
+  background-color: #ffebee;
+  color: #c62828;
+  border: 1px solid #ffcdd2;
+}

@@ -2,32 +2,77 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import './VideoCard.css';
 
-export default function VideoCard({ id, thumbnail, title, author, views, date, duration, verified }) {
+export default function VideoCard({ 
+  _id, 
+  id, 
+  thumbnail, 
+  title, 
+  author, 
+  uploader,
+  views, 
+  date, 
+  duration, 
+  verified 
+}) {
   const navigate = useNavigate();
 
   const handleChannelClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    // Convert channel name to URL-friendly format
-    const channelName = author.toLowerCase().replace(/\s+/g, '-');
-    navigate(`/channel/${channelName}`);
+    
+    // Use uploader's channel handle if available, otherwise fallback to username
+    if (uploader && uploader.channel && uploader.channel.handle) {
+      const channelHandle = uploader.channel.handle.replace('@', '');
+      navigate(`/channel/${channelHandle}`);
+    } else if (uploader && uploader.username) {
+      navigate(`/channel/${uploader.username}`);
+    } else if (author) {
+      navigate(`/channel/${author}`);
+    }
   };
 
   const handleVideoClick = () => {
-    navigate(`/watch/${id}`);
+    const videoId = _id || id;
+    navigate(`/watch/${videoId}`);
   };
+
+  // Get channel info from uploader
+  const channelName = uploader?.channel?.name || uploader?.username || author || 'Unknown Channel';
+  const channelHandle = uploader?.channel?.handle ? `${uploader.channel.handle}` : (uploader?.username || author || 'Unknown Channel');
+  
+  // Handle avatar URL with proper server path
+  const getAvatarUrl = () => {
+    const avatar = uploader?.channel?.avatar || uploader?.profilePicture;
+    if (!avatar) return '/images/user.jpg';
+    if (avatar.startsWith('/uploads/')) {
+      return `http://localhost:5000${avatar}`;
+    }
+    return avatar;
+  };
+  
+  // Handle thumbnail URL with proper server path
+  const getThumbnailUrl = () => {
+    if (!thumbnail) return '/images/thumbnail.jpg';
+    if (thumbnail.startsWith('/uploads/')) {
+      return `http://localhost:5000${thumbnail}`;
+    }
+    return thumbnail;
+  };
+  
+  const channelAvatar = getAvatarUrl();
+  const thumbnailUrl = getThumbnailUrl();
 
   return (
     <div className="video-card" onClick={handleVideoClick} style={{ cursor: 'pointer' }}>
       <div className="thumbnail-container">
-        <img src={thumbnail} alt={title} className="thumbnail" />
+        <img src={thumbnailUrl} alt={title} className="thumbnail" />
         {duration && <span className="video-duration">{duration}</span>}
       </div>
       <div className="video-info">
         <div className="info-container">
           <img 
-            src="/images/user.jpg" 
-            alt={author} 
+            src={channelAvatar} 
+            alt={channelName} 
             className="channel-avatar"
             onClick={handleChannelClick}
           />
@@ -38,7 +83,7 @@ export default function VideoCard({ id, thumbnail, title, author, views, date, d
                 className="channel-name-container"
                 onClick={handleChannelClick}
               >
-                <p className="video-meta channel-name">{author}</p>
+                <p className="video-meta channel-name">{channelHandle}</p>
                 {verified && (
                   <span className="verified-badge" title="Verified">
                     <svg height="14" width="14" viewBox="0 0 24 24">

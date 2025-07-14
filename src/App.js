@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import './App.css';
 
 import Sidebar from './components/Sidebar';
@@ -26,43 +26,53 @@ function MainAppContent({ user, setUser }) {
   
   return (
     <div className={isSidebarCollapsed ? 'collapsed-sidebar' : ''}>
-      <Routes>
-        {/* YouTube Studio Routes - these need full screen layout without sidebar/topbar */}
-        <Route path="/studio" element={<YouTubeStudio />} />
-        <Route path="/studio/video/edit/:videoId" element={<VideoEdit />} />
-        <Route path="/studio/*" element={<YouTubeStudio />} />
-        
-        {/* Profile Management - full screen layout */}
-        <Route path="/profile/edit" element={<EditProfile user={user} setUser={setUser} />} />
-        
-        {/* Main App Routes with Sidebar and Topbar */}
-        <Route path="/*" element={
-          <>
-            <Topbar user={user} setUser={setUser} />
-            <Sidebar />
-            <div className="main">
-              <Routes>
-                <Route path="/" element={<VideoGrid />} />
-                <Route path="/trending" element={<Trending />} />
-                <Route path="/subscriptions" element={<Subscriptions />} />
-                <Route path="/library" element={<Library />} />
-                <Route path="/history" element={<History />} />
-                <Route path="/watch/:videoId" element={<VideoWatch />} />
-                <Route path="/channel/:channelName" element={<Channel />} />
-                
-                {/* User Routes */}
-                <Route path="/playlist/watch-later" element={<WatchLater />} />
-                <Route path="/playlist/liked-videos" element={<LikedVideos />} />
-                
-                {/* Catch all - redirect to home */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </div>
-          </>
-        } />
-      </Routes>
+      <Topbar user={user} setUser={setUser} />
+      <Sidebar user={user} />
+      <div className="main">
+        <Routes>
+          <Route path="/" element={<VideoGrid />} />
+          <Route path="/trending" element={<Trending />} />
+          <Route path="/subscriptions" element={<Subscriptions />} />
+          <Route path="/library" element={<Library />} />
+          <Route path="/history" element={<History />} />
+          <Route path="/watch/:videoId" element={<VideoWatch />} />
+          
+          {/* User Routes */}
+          <Route path="/playlist/watch-later" element={<WatchLater />} />
+          <Route path="/playlist/liked-videos" element={<LikedVideos />} />
+          
+          {/* Catch all - redirect to home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
     </div>
   );
+}
+
+// Protected Route Component - only for routes that require authentication
+function ProtectedRoute({ children, user }) {
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
+
+  if (!user) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh' 
+      }}>
+        <div>Please log in to access this page...</div>
+      </div>
+    );
+  }
+
+  return children;
 }
 
 export default function App() {
@@ -125,19 +135,48 @@ export default function App() {
   return (
     <Router>
       <div className="App">
-        {!user ? (
-          // Authentication Routes
+        <SidebarProvider>
           <Routes>
+            {/* Authentication Routes */}
             <Route path="/login" element={<Login setUser={setUser} />} />
             <Route path="/signup" element={<Signup setUser={setUser} />} />
-            <Route path="*" element={<Navigate to="/login" replace />} />
+            
+            {/* Protected Routes - require authentication */}
+            <Route path="/studio" element={
+              <ProtectedRoute user={user}>
+                <YouTubeStudio />
+              </ProtectedRoute>
+            } />
+            <Route path="/studio/video/edit/:videoId" element={
+              <ProtectedRoute user={user}>
+                <VideoEdit />
+              </ProtectedRoute>
+            } />
+            <Route path="/studio/*" element={
+              <ProtectedRoute user={user}>
+                <YouTubeStudio />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile/edit" element={
+              <ProtectedRoute user={user}>
+                <EditProfile user={user} setUser={setUser} />
+              </ProtectedRoute>
+            } />
+            <Route path="/channel" element={
+              <ProtectedRoute user={user}>
+                <Navigate to={`/channel/${user?.channel?.handle || user?.username}`} replace />
+              </ProtectedRoute>
+            } />
+            <Route path="/channel/:handle" element={
+              <ProtectedRoute user={user}>
+                <Channel user={user} />
+              </ProtectedRoute>
+            } />
+            
+            {/* Public Routes - no authentication required */}
+            <Route path="/*" element={<MainAppContent user={user} setUser={setUser} />} />
           </Routes>
-        ) : (
-          // Main App Routes
-          <SidebarProvider>
-            <MainAppContent user={user} setUser={setUser} />
-          </SidebarProvider>
-        )}
+        </SidebarProvider>
       </div>
     </Router>
   );

@@ -249,10 +249,6 @@ router.post('/upload', auth, upload.fields([
       isForKids: isForKids === 'true' || isForKids === true,
       ageRestricted: ageRestricted === 'true' || ageRestricted === true,
       uploader: req.user.id,
-      uploaderChannel: {
-        name: req.user.channel?.name || req.user.username,
-        avatar: req.user.channel?.avatar || '/images/user.jpg'
-      },
       tags: Array.isArray(tags) ? tags : tags.split(',').map(tag => tag.trim()),
       category,
       processingStatus: 'processing',
@@ -318,7 +314,7 @@ router.post('/upload', auth, upload.fields([
 // @route   GET /api/videos
 // @desc    Get all videos (public and user's private videos)
 // @access  Public
-router.get('/', async (req, res) => {
+router.get('/', optionalAuth, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
@@ -383,6 +379,7 @@ router.get('/my', auth, async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
+      .populate('uploader', 'username channel')
       .select('-filePath');
 
     const total = await Video.countDocuments({ uploader: req.user.id });
@@ -412,7 +409,8 @@ router.get('/my', auth, async (req, res) => {
 router.get('/:id', optionalAuth, async (req, res) => {
   try {
     const video = await Video.findById(req.params.id)
-      .populate('uploader', 'username channel')
+      .populate('uploader', 'username channel subscribers')
+      .populate('comments')
       .select('-filePath');
 
     if (!video) {
@@ -437,7 +435,6 @@ router.get('/:id', optionalAuth, async (req, res) => {
       await video.save();
     }
 
-
     // Determine if the logged-in user has liked/disliked this video
     let userLiked = false;
     let userDisliked = false;
@@ -446,14 +443,35 @@ router.get('/:id', optionalAuth, async (req, res) => {
       userDisliked = Array.isArray(video.dislikedUsers) && video.dislikedUsers.map(id => id.toString()).includes(req.user.id);
     }
 
-    // Attach like/dislike info for the current user
+    // Check if user is subscribed to the channel
+    let isSubscribed = false;
+    if (req.user && video.uploader) {
+      const User = require('../models/User');
+      const currentUser = await User.findById(req.user.id);
+      if (currentUser && currentUser.subscriptions) {
+        isSubscribed = currentUser.subscriptions.map(id => id.toString()).includes(video.uploader._id.toString());
+      }
+    }
+
+    // Prepare response data
+    const responseData = {
+      ...video.toObject(),
+      userLiked,
+      userDisliked,
+      commentsCount: video.comments ? video.comments.length : 0,
+      uploaderChannel: video.uploader.channel ? {
+        ...video.uploader.channel,
+        subscriberCount: video.uploader.subscribers ? video.uploader.subscribers.length : 0,
+        isSubscribed
+      } : null
+    };
+
+    // Don't send the full comments array in the main response
+    delete responseData.comments;
+
     res.json({
       success: true,
-      data: {
-        ...video.toObject(),
-        userLiked,
-        userDisliked
-      }
+      data: responseData
     });
 
   } catch (error) {
@@ -522,11 +540,18 @@ router.get('/stream/:filename', (req, res) => {
 // @route   PUT /api/videos/:id
 // @desc    Update video details
 // @access  Private
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', auth, upload.single('thumbnail'), async (req, res) => {
   try {
+    console.log('🔧 PUT /api/videos/:id - Request received');
+    console.log('📝 Video ID:', req.params.id);
+    console.log('👤 User ID:', req.user.id);
+    console.log('📦 Request body:', req.body);
+    console.log('📁 Uploaded file:', req.file ? req.file.filename : 'No file');
+    
     const video = await Video.findById(req.params.id);
 
     if (!video) {
+      console.log('❌ Video not found:', req.params.id);
       return res.status(404).json({
         success: false,
         message: 'Video not found'
@@ -535,6 +560,9 @@ router.put('/:id', auth, async (req, res) => {
 
     // Check if user owns this video
     if (video.uploader.toString() !== req.user.id) {
+      console.log('🚫 Access denied - user does not own video');
+      console.log('Video uploader:', video.uploader.toString());
+      console.log('Request user:', req.user.id);
       return res.status(403).json({
         success: false,
         message: 'Access denied'
@@ -560,7 +588,29 @@ router.put('/:id', auth, async (req, res) => {
     if (tags) video.tags = Array.isArray(tags) ? tags : tags.split(',').map(tag => tag.trim());
     if (category) video.category = category;
 
+    // Handle thumbnail update
+    if (req.file) {
+      // Delete old thumbnail if it exists and is not the default
+      if (video.thumbnail && !video.thumbnail.includes('/images/thumbnail.jpg')) {
+        const oldThumbnailPath = path.join(__dirname, '..', video.thumbnail);
+        if (fs.existsSync(oldThumbnailPath)) {
+          try {
+            fs.unlinkSync(oldThumbnailPath);
+            console.log('🗑️ Deleted old thumbnail:', oldThumbnailPath);
+          } catch (err) {
+            console.log('⚠️ Could not delete old thumbnail:', err.message);
+          }
+        }
+      }
+      
+      // Set new thumbnail path
+      video.thumbnail = `/uploads/thumbnails/${req.file.filename}`;
+      console.log('🖼️ Updated thumbnail:', video.thumbnail);
+    }
+
+    console.log('💾 Saving video changes to MongoDB...');
     await video.save();
+    console.log('✅ Video successfully saved to MongoDB');
 
     res.json({
       success: true,

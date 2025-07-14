@@ -107,6 +107,16 @@
   background-color: #e0e0e0;
 }
 
+.subscribe-btn.own-channel {
+  background-color: #f8f9fa;
+  color: #606060;
+  cursor: not-allowed;
+}
+
+.subscribe-btn.own-channel:hover {
+  background-color: #f8f9fa;
+}
+
 .channel-content {
   padding: 24px 32px;
 }

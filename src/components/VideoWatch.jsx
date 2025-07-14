@@ -32,12 +32,33 @@ export default function VideoWatch() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [subscriberCount, setSubscriberCount] = useState(0);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
+  const [commentCount, setCommentCount] = useState(0);
   const [likeCount, setLikeCount] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [isDisliked, setIsDisliked] = useState(false);
   const [showDescription, setShowDescription] = useState(false);
   const [recommendedVideos, setRecommendedVideos] = useState([]);
   const [refreshCommentsFlag, setRefreshCommentsFlag] = useState(0);
+
+  // Function to refresh comment count when a comment is added
+  const handleCommentAdded = async () => {
+    setRefreshCommentsFlag(f => f + 1);
+    // Also update the comment count
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const res = await fetch(`http://localhost:5000/api/videos/${videoId}`,
+        token ? { headers: { 'Authorization': `Bearer ${token}` } } : undefined
+      );
+      const data = await res.json();
+      if (data.success && data.data) {
+        setCommentCount(data.data.commentsCount || 0);
+      }
+    } catch (err) {
+      console.error('Failed to update comment count:', err);
+    }
+  };
 
   // Extract token for useEffect dependency to avoid lint error
   const authToken = localStorage.getItem('token') || sessionStorage.getItem('token');
@@ -56,6 +77,10 @@ export default function VideoWatch() {
           // Set like/dislike state for logged in user
           setIsLiked(Boolean(data.data.userLiked));
           setIsDisliked(Boolean(data.data.userDisliked));
+          // Set subscription and comment data
+          setIsSubscribed(Boolean(data.data.uploaderChannel?.isSubscribed));
+          setSubscriberCount(data.data.uploaderChannel?.subscriberCount || 0);
+          setCommentCount(data.data.commentsCount || 0);
         } else {
           setError(data.message || 'Video not found');
         }
@@ -111,7 +136,44 @@ export default function VideoWatch() {
   }, [videoId]);
 
 
-  const handleSubscribe = () => setIsSubscribed(!isSubscribed);
+  const handleSubscribe = async () => {
+    if (!video || !video.uploader || !video.uploader._id) {
+      console.error('No uploader information available');
+      return;
+    }
+    
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) {
+      alert('Please log in to subscribe to channels');
+      return;
+    }
+
+    setSubscriptionLoading(true);
+    
+    try {
+      const endpoint = isSubscribed ? 'unsubscribe' : 'subscribe';
+      const response = await fetch(`http://localhost:5000/api/subscriptions/${endpoint}/${video.uploader._id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setIsSubscribed(data.isSubscribed);
+        setSubscriberCount(data.subscriberCount);
+      } else {
+        alert(data.message || 'Failed to update subscription');
+      }
+    } catch (error) {
+      console.error('Error updating subscription:', error);
+      alert('Failed to update subscription');
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  };
   const handleLike = async () => {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     try {
@@ -270,14 +332,17 @@ export default function VideoWatch() {
                 >
                   {video.uploaderChannel?.name || 'Channel'}
                 </h3>
-                {/* Optionally show subscriber count if available */}
+                <div className="channel-subscriber-count subscriber-count">
+                  {subscriberCount.toLocaleString()} subscribers
+                </div>
               </div>
             </div>
             <button 
               className={`subscribe-btn ${isSubscribed ? 'subscribed' : ''}`}
               onClick={handleSubscribe}
+              disabled={subscriptionLoading}
             >
-              {isSubscribed ? 'Subscribed' : 'Subscribe'}
+              {subscriptionLoading ? 'Loading...' : (isSubscribed ? 'Subscribed' : 'Subscribe')}
             </button>
           </div>
           <div className="video-description">
@@ -293,13 +358,13 @@ export default function VideoWatch() {
           </div>
           <div className="comments-section">
             <div className="comments-header">
-              <h3>{(video.commentsCount || 0).toLocaleString()} Comments</h3>
+              <h3>{commentCount.toLocaleString()} Comments</h3>
               <button className="sort-btn">
                 <span className="icon">⚙</span>
                 Sort by
               </button>
             </div>
-            <AddComment videoId={videoId} onCommentAdded={() => setRefreshCommentsFlag(f => f + 1)} />
+            <AddComment videoId={videoId} onCommentAdded={handleCommentAdded} />
             <CommentsList videoId={videoId} refresh={refreshCommentsFlag} />
           </div>
         </div>

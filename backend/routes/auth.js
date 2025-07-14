@@ -184,6 +184,7 @@ router.get('/me', auth, async (req, res) => {
     if (!user) return res.status(404).json({ msg: 'User not found' });
 
     res.json({ 
+      success: true,
       user: {
         id: user._id,
         firstName: user.firstName,
@@ -194,11 +195,76 @@ router.get('/me', auth, async (req, res) => {
         dateOfBirth: user.dateOfBirth,
         gender: user.gender,
         country: user.country,
-        phoneNumber: user.phoneNumber
+        phoneNumber: user.phoneNumber,
+        channel: user.channel
       }
     });
   } catch (err) {
     console.error('❌ Error in /me:', err);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+// Debug route to check user data
+router.get('/debug/me', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+
+    console.log('🔍 Debug user data:', {
+      id: user._id,
+      username: user.username,
+      channel: user.channel
+    });
+
+    res.json({ 
+      success: true,
+      user: user,
+      debug: {
+        hasChannel: !!user.channel,
+        channelName: user.channel?.name,
+        channelHandle: user.channel?.handle,
+        channelDescription: user.channel?.description
+      }
+    });
+  } catch (err) {
+    console.error('❌ Error in debug /me:', err);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+// Initialize channel data for users who don't have it
+router.post('/init-channel', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+
+    // If user doesn't have channel data, initialize it
+    if (!user.channel || !user.channel.name) {
+      user.channel = {
+        name: user.username || 'My Channel',
+        handle: `@${user.username}`,
+        description: '',
+        avatar: user.profilePicture || '',
+        banner: '',
+        subscriberCount: 0,
+        videoCount: 0,
+        totalViews: 0,
+        category: 'Other',
+        isActive: true
+      };
+      
+      await user.save();
+      console.log('✅ Initialized channel for user:', user.username);
+    }
+
+    res.json({ 
+      success: true,
+      message: 'Channel initialized',
+      channel: user.channel
+    });
+  } catch (err) {
+    console.error('❌ Error initializing channel:', err);
     res.status(500).json({ msg: 'Server error' });
   }
 });

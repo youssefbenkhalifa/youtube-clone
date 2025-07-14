@@ -17,10 +17,12 @@
   const authRoutes = require('./routes/auth');
   const userRoutes = require('./routes/User');
   const videoRoutes = require('./routes/videos');
+  const subscriptionRoutes = require('./routes/subscriptions');
 
   app.use('/api/auth', authRoutes);
   app.use('/api/user', userRoutes);
   app.use('/api/videos', videoRoutes);
+  app.use('/api/subscriptions', subscriptionRoutes);
 
   // MongoDB Connection
   mongoose.connect(process.env.MONGO_URI, {

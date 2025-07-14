@@ -82,10 +82,6 @@ const VideoSchema = new mongoose.Schema(
       ref: 'User',
       required: true
     },
-    uploaderChannel: {
-      name: String,
-      avatar: String
-    },
     tags: [{
       type: String,
       maxlength: 30

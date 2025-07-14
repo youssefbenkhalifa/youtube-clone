@@ -50,15 +50,53 @@ const UserSchema = new mongoose.Schema(
         type: String,
         default: ''
       },
+      handle: {
+        type: String,
+        unique: true,
+        sparse: true // Allows multiple null values
+      },
       description: {
         type: String,
         default: ''
       },
       avatar: {
         type: String,
-        default: '' // Can be a URL or path to uploaded image
+        default: ''
+      },
+      banner: {
+        type: String,
+        default: ''
+      },
+      subscriberCount: {
+        type: Number,
+        default: 0
+      },
+      videoCount: {
+        type: Number,
+        default: 0
+      },
+      totalViews: {
+        type: Number,
+        default: 0
+      },
+      category: {
+        type: String,
+        default: 'Other'
+      },
+      isActive: {
+        type: Boolean,
+        default: true
       }
-    }
+    },
+    // Subscription tracking
+    subscriptions: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }],
+    subscribers: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }]
   },
   { timestamps: true }
 );

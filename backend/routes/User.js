@@ -53,9 +53,10 @@ router.put('/channel', auth, upload.single('avatar'), async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ msg: 'User not found' });
 
-    // Update name and description
+    // Update name, description, and handle
     user.channel.name = req.body.name || user.channel.name;
     user.channel.description = req.body.description || user.channel.description;
+    user.channel.handle = req.body.handle || user.channel.handle;
 
     // ✅ Handle avatar upload and rename if needed
     if (req.file) {
@@ -151,6 +152,52 @@ router.put('/profile', auth, profileUpload.single('profilePicture'), async (req,
   } catch (err) {
     console.error('❌ Error in /profile:', err);
     res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+// GET /api/user/channel/:handle - Get channel by handle or username
+router.get('/channel/:handle', async (req, res) => {
+  try {
+    // First try to find by channel handle
+    let user = await User.findOne({ 'channel.handle': req.params.handle });
+    
+    // If not found by handle, try to find by username
+    if (!user) {
+      user = await User.findOne({ username: req.params.handle });
+    }
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Channel not found' });
+    }
+
+    // Fetch user's videos
+    const Video = require('../models/Video');
+    const videos = await Video.find({ 
+      uploader: user._id,
+      visibility: { $in: ['public', 'unlisted'] } // Only show public and unlisted videos
+    })
+    .sort({ createdAt: -1 })
+    .limit(50) // Limit to 50 most recent videos
+    .select('-filePath'); // Don't expose file system paths
+
+    // Update channel video count
+    const updatedChannel = {
+      ...user.channel,
+      videoCount: videos.length
+    };
+
+    res.json({
+      success: true,
+      data: {
+        id: user._id,
+        channel: updatedChannel,
+        username: user.username,
+        videos: videos
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching channel:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 

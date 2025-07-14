@@ -56,56 +56,69 @@ export default function YouTubeStudio({ showUploadModal = false }) {
   const [loadingVideos, setLoadingVideos] = useState(false);
   const [videoError, setVideoError] = useState(null);
   const [selectedThumbnail, setSelectedThumbnail] = useState(null);
+  const [uploadedVideoId, setUploadedVideoId] = useState(null); // Store uploaded video ID
   // We're keeping user state for future functionality
   const [user, setUser] = useState(null); // eslint-disable-line no-unused-vars
 
+  // Channel customization states
+  const [channelData, setChannelData] = useState({
+    name: '',
+    handle: '',
+    description: '',
+    avatar: ''
+  });
+  const [channelLoading, setChannelLoading] = useState(false);
+  const [channelMessage, setChannelMessage] = useState('');
+  const [selectedAvatar, setSelectedAvatar] = useState(null);
+
   // Fetch uploaded videos for the current user
+  const fetchVideos = async () => {
+    setLoadingVideos(true);
+    setVideoError(null);
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/videos/my', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Process videos to get the required format
+        const processedVideos = data.data.map(video => ({
+          id: video._id,
+          title: video.title,
+          description: video.description || "Add description",
+          visibility: video.visibility || "Unlisted",
+          restrictions: "None",
+          date: formatDate(video.createdAt),
+          uploadStatus: "Uploaded",
+          views: video.views || 0,
+          comments: video.comments?.length || 0,
+          likes: video.likes || 0,
+          dislikes: video.dislikes || 0,
+          thumbnail: video.thumbnail || "/images/thumbnail.jpg",
+          duration: formatDuration(video.duration),
+          createdAt: video.createdAt // Keep original date for sorting
+        }));
+        
+        // Sort by most recent first
+        processedVideos.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        
+        setVideos(processedVideos);
+      } else {
+        setVideoError(data.message || 'Failed to fetch videos');
+      }
+    } catch (err) {
+      console.error('Error fetching videos:', err);
+      setVideoError('Failed to fetch videos');
+    } finally {
+      setLoadingVideos(false);
+    }
+  };
+
   useEffect(() => {
     if (selectedTab !== 'content') return;
-    const fetchVideos = async () => {
-      setLoadingVideos(true);
-      setVideoError(null);
-      try {
-        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-        const res = await fetch('http://localhost:5000/api/videos/my', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        const data = await res.json();
-        if (data.success) {
-          // Process videos to get the required format
-          const processedVideos = data.data.map(video => ({
-            id: video._id,
-            title: video.title,
-            description: video.description || "Add description",
-            visibility: video.visibility || "Unlisted",
-            restrictions: "None",
-            date: formatDate(video.createdAt),
-            uploadStatus: "Uploaded",
-            views: video.views || 0,
-            comments: video.comments?.length || 0,
-            likes: video.likes || 0,
-            dislikes: video.dislikes || 0,
-            thumbnail: video.thumbnail || "/images/thumbnail.jpg",
-            duration: formatDuration(video.duration),
-            createdAt: video.createdAt // Keep original date for sorting
-          }));
-          
-          // Sort by most recent first
-          processedVideos.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-          
-          setVideos(processedVideos);
-        } else {
-          setVideoError(data.message || 'Failed to fetch videos');
-        }
-      } catch (err) {
-        console.error('Error fetching videos:', err);
-        setVideoError('Failed to fetch videos');
-      } finally {
-        setLoadingVideos(false);
-      }
-    };
     fetchVideos();
   }, [selectedTab, isUploadModalOpen]);
 
@@ -124,6 +137,19 @@ export default function YouTubeStudio({ showUploadModal = false }) {
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       console.log('📦 Fetching user with token:', token); // 🔍
+      
+      // First, initialize channel data if needed
+      try {
+        await fetch('http://localhost:5000/api/auth/init-channel', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      } catch (initError) {
+        console.log('Channel init not needed or failed:', initError);
+      }
+      
       const res = await fetch('http://localhost:5000/api/auth/me', {
         headers: {
           Authorization: `Bearer ${token}`
@@ -131,10 +157,10 @@ export default function YouTubeStudio({ showUploadModal = false }) {
       });
       const data = await res.json();
       console.log('👤 User fetch result:', data); // 🔍
-      if (data && data.user && data.user._id) {
+      if (data && data.user && data.user.id) {
         setUser(data.user);
       } else {
-        console.error('User fetch failed (no _id):', data);
+        console.error('User fetch failed (no id):', data);
       }
     } catch (err) {
       console.error('❌ Failed to load user info', err);
@@ -142,6 +168,61 @@ export default function YouTubeStudio({ showUploadModal = false }) {
   };
   fetchUser();
 }, []);
+
+  // Fetch channel data when customization tab is selected
+  useEffect(() => {
+    if (selectedTab !== 'customization') return;
+    
+    const fetchChannelData = async () => {
+      setChannelLoading(true);
+      setChannelMessage('');
+      try {
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        
+        // First, ensure user has channel data initialized
+        await fetch('http://localhost:5000/api/auth/init-channel', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        // Then fetch the user data with channel info
+        const response = await fetch('http://localhost:5000/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        const data = await response.json();
+        console.log('🔍 Fetched channel data:', data);
+        console.log('🔍 User channel:', data.user?.channel);
+        if (data.success && data.user) {
+          setChannelData({
+            name: data.user.channel?.name || '',
+            handle: data.user.channel?.handle || '',
+            description: data.user.channel?.description || '',
+            avatar: data.user.channel?.avatar || ''
+          });
+          console.log('✅ Channel data set:', {
+            name: data.user.channel?.name || '',
+            handle: data.user.channel?.handle || '',
+            description: data.user.channel?.description || '',
+            avatar: data.user.channel?.avatar || ''
+          });
+        } else {
+          console.error('❌ Failed to fetch channel data:', data);
+        }
+      } catch (error) {
+        console.error('Error fetching channel data:', error);
+        setChannelMessage('Failed to load channel data');
+      } finally {
+        setChannelLoading(false);
+      }
+    };
+    
+    fetchChannelData();
+  }, [selectedTab]);
 
   const handleBackToYouTube = () => {
     navigate('/');
@@ -221,6 +302,10 @@ export default function YouTubeStudio({ showUploadModal = false }) {
           const response = JSON.parse(xhr.responseText);
           console.log('Upload successful:', response);
           setUploadProgress(100);
+          // Store the uploaded video ID for later use
+          if (response.data && response.data.id) {
+            setUploadedVideoId(response.data.id);
+          }
         } else {
           const error = JSON.parse(xhr.responseText);
           console.error('Upload failed:', error);
@@ -249,25 +334,168 @@ export default function YouTubeStudio({ showUploadModal = false }) {
 
   const handlePublishVideo = async () => {
     try {
-      // Here you could update video details, change visibility, etc.
-      alert('Video published successfully!');
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      
+      // If we have an uploaded video ID, update its details
+      if (uploadedVideoId) {
+        const formData = new FormData();
+        formData.append('title', videoTitle);
+        formData.append('description', videoDescription);
+        formData.append('visibility', 'public'); // Change to public when publishing
+        
+        if (selectedThumbnail) {
+          formData.append('thumbnail', selectedThumbnail);
+        }
+
+        const response = await fetch(`http://localhost:5000/api/videos/${uploadedVideoId}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        const data = await response.json();
+        if (!data.success) {
+          throw new Error(data.message || 'Failed to update video details');
+        }
+      }
+      
+      // Show success message
+      const successToast = document.createElement('div');
+      successToast.className = 'toast success-toast';
+      successToast.textContent = 'Video published successfully!';
+      successToast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #4caf50;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 4px;
+        z-index: 10000;
+        font-family: Arial, sans-serif;
+      `;
+      document.body.appendChild(successToast);
+      setTimeout(() => {
+        if (document.body.contains(successToast)) {
+          document.body.removeChild(successToast);
+        }
+      }, 3000);
+      
       setIsUploadModalOpen(false);
+      
       // Reset form
       setSelectedFiles([]);
       setVideoTitle('');
       setVideoDescription('');
+      setSelectedThumbnail(null);
+      setUploadedVideoId(null);
       setUploadStep('select');
       setUploadProgress(0);
       setIsUploading(false);
+      
+      // Refresh the videos list to show the newly published video
+      if (selectedTab === 'content') {
+        window.location.reload(); // Simple refresh - in production you'd update state
+      }
+      
     } catch (error) {
       console.error('Error publishing video:', error);
-      alert('Error publishing video: ' + error.message);
+      const errorToast = document.createElement('div');
+      errorToast.className = 'toast error-toast';
+      errorToast.textContent = 'Error publishing video: ' + error.message;
+      errorToast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #f44336;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 4px;
+        z-index: 10000;
+        font-family: Arial, sans-serif;
+      `;
+      document.body.appendChild(errorToast);
+      setTimeout(() => {
+        if (document.body.contains(errorToast)) {
+          document.body.removeChild(errorToast);
+        }
+      }, 5000);
     }
   };
   
   const handleEditVideo = (videoId) => {
     // Navigate to the video edit page
     navigate(`/studio/video/edit/${videoId}`);
+  };
+
+  // Channel management functions
+  const handleChannelInputChange = (field, value) => {
+    setChannelData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleAvatarChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedAvatar(e.target.files[0]);
+    }
+  };
+
+  const handleChannelSave = async () => {
+    setChannelLoading(true);
+    setChannelMessage('');
+    
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const formData = new FormData();
+      
+      formData.append('name', channelData.name);
+      formData.append('handle', channelData.handle);
+      formData.append('description', channelData.description);
+      
+      if (selectedAvatar) {
+        formData.append('avatar', selectedAvatar);
+      }
+      
+      const response = await fetch('http://localhost:5000/api/user/channel', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        setChannelMessage('✅ Channel updated successfully!');
+        setSelectedAvatar(null);
+        // Update channel data with the response
+        if (data.user && data.user.channel) {
+          setChannelData({
+            name: data.user.channel.name || '',
+            handle: data.user.channel.handle || '',
+            description: data.user.channel.description || '',
+            avatar: data.user.channel.avatar || ''
+          });
+        }
+        
+        // Refresh videos to show updated channel information
+        if (selectedTab === 'content' || videos.length > 0) {
+          fetchVideos();
+        }
+      } else {
+        setChannelMessage(`❌ ${data.msg || 'Failed to update channel'}`);
+      }
+    } catch (error) {
+      console.error('Error updating channel:', error);
+      setChannelMessage('❌ Network error occurred');
+    } finally {
+      setChannelLoading(false);
+    }
   };
 
 
@@ -337,6 +565,15 @@ export default function YouTubeStudio({ showUploadModal = false }) {
                 <path d="M21.99 4c0-1.1-.89-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18zM18 14H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" fill="currentColor"/>
               </svg>
               Comments
+            </button>
+            <button 
+              className={`studio-nav-item ${selectedTab === 'customization' ? 'active' : ''}`}
+              onClick={() => handleTabClick('customization')}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
+              </svg>
+              Customization
             </button>
           </div>
         </div>
@@ -494,6 +731,105 @@ export default function YouTubeStudio({ showUploadModal = false }) {
               </div>
             </div>
           )}
+
+          {selectedTab === 'customization' && (
+            <div className="studio-customization">
+              <h1>Channel Customization</h1>
+              <div className="customization-content">
+                <div className="customization-section">
+                  <h2>Basic Info</h2>
+                  
+                  <div className="form-group">
+                    <label htmlFor="channel-name">Channel Name</label>
+                    <input
+                      type="text"
+                      id="channel-name"
+                      value={channelData.name}
+                      onChange={(e) => handleChannelInputChange('name', e.target.value)}
+                      placeholder="Enter your channel name"
+                      maxLength={100}
+                    />
+                    <small>This is how your channel will appear to viewers</small>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="channel-handle">Channel Handle</label>
+                    <input
+                      type="text"
+                      id="channel-handle"
+                      value={channelData.handle}
+                      onChange={(e) => handleChannelInputChange('handle', e.target.value)}
+                      placeholder="@yourhandle"
+                      maxLength={30}
+                    />
+                    <small>Your unique channel identifier (e.g., @mychannel)</small>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="channel-description">Channel Description</label>
+                    <textarea
+                      id="channel-description"
+                      value={channelData.description}
+                      onChange={(e) => handleChannelInputChange('description', e.target.value)}
+                      placeholder="Tell viewers about your channel"
+                      rows={4}
+                      maxLength={1000}
+                    />
+                    <small>{channelData.description.length}/1000 characters</small>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="channel-avatar">Channel Avatar</label>
+                    <div className="avatar-section">
+                      <div className="current-avatar">
+                        <img 
+                          src={channelData.avatar ? `http://localhost:5000${channelData.avatar}` : '/images/user.jpg'} 
+                          alt="Channel avatar"
+                          className="avatar-preview"
+                        />
+                      </div>
+                      <div className="avatar-upload">
+                        <input
+                          type="file"
+                          id="channel-avatar"
+                          accept="image/*"
+                          onChange={handleAvatarChange}
+                          style={{ display: 'none' }}
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => document.getElementById('channel-avatar').click()}
+                          className="upload-button"
+                        >
+                          Change Avatar
+                        </button>
+                        {selectedAvatar && (
+                          <p className="selected-file">Selected: {selectedAvatar.name}</p>
+                        )}
+                      </div>
+                    </div>
+                    <small>Recommended size: 800x800 pixels. Max file size: 5MB</small>
+                  </div>
+
+                  <div className="form-actions">
+                    <button 
+                      onClick={handleChannelSave}
+                      disabled={channelLoading}
+                      className="save-button"
+                    >
+                      {channelLoading ? 'Saving...' : 'Save Changes'}
+                    </button>
+                  </div>
+
+                  {channelMessage && (
+                    <div className={`message ${channelMessage.includes('✅') ? 'success' : 'error'}`}>
+                      {channelMessage}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -502,7 +838,7 @@ export default function YouTubeStudio({ showUploadModal = false }) {
         <div className="upload-modal-overlay" onClick={handleUploadClose}>
           <div className="upload-modal" onClick={(e) => e.stopPropagation()}>
             <div className="upload-modal-header">
-              <h2>{uploadStep === 'select' ? 'Upload videos' : selectedFiles[0]?.name || 'video1'}</h2>
+              <h2>{uploadStep === 'select' ? 'Upload videos' : selectedFiles[0]?.name}</h2>
               <div className="upload-modal-actions">
                 {uploadStep !== 'select' && (
                   <span className="save-status">Saved as private</span>
@@ -531,7 +867,6 @@ export default function YouTubeStudio({ showUploadModal = false }) {
                   <div className="step-circle">3</div>
                   <span>Checks</span>
                 </div>
-                <div className="step-line"></div>
                 <div className={`step ${uploadStep === 'visibility' ? 'active' : ''}`} onClick={() => handleStepChange('visibility')}>
                   <div className="step-circle">4</div>
                   <span>Visibility</span>
@@ -706,7 +1041,7 @@ export default function YouTubeStudio({ showUploadModal = false }) {
                           </div>
                           <div className="info-row">
                             <span>Filename</span>
-                            <span>{selectedFiles[0]?.name || 'video1.mp4'}</span>
+                            <span>{selectedFiles[0]?.name}</span>
                           </div>
                         </div>
                       </div>
