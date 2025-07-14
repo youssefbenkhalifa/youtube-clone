@@ -1,4 +1,4 @@
-// backend/routes/user.js
+// ✅ backend/routes/user.js
 const router = require('express').Router();
 const multer = require('multer');
 const path = require('path');
@@ -30,19 +30,30 @@ router.put('/channel', auth, upload.single('avatar'), async (req, res) => {
     user.channel.name = req.body.name || user.channel.name;
     user.channel.description = req.body.description || user.channel.description;
 
-    // ✅ Handle avatar upload and rename if needed
+    // ✅ Handle avatar upload
     if (req.file) {
       const ext = path.extname(req.file.originalname);
       const oldPath = req.file.path;
       const newPath = `${oldPath}${ext}`;
-
       fs.renameSync(oldPath, newPath);
-
       user.channel.avatar = `/uploads/${path.basename(newPath)}`;
     }
 
     await user.save();
-    res.json({ user });
+
+    // ✅ Return structured and clean response
+    res.json({
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        channel: {
+          name: user.channel.name,
+          description: user.channel.description,
+          avatar: user.channel.avatar,
+        }
+      }
+    });
   } catch (err) {
     console.error('❌ Error in /channel:', err);
     res.status(500).json({ msg: 'Server error' });

@@ -32,7 +32,7 @@ export default function EditChannel({ user, onUpdate }) {
     e.preventDefault();
     const token = localStorage.getItem('token');
     if (!token) {
-      setMessage('❌ No token found.');
+      setMessage(' No token found.');
       return;
     }
 
@@ -54,14 +54,15 @@ export default function EditChannel({ user, onUpdate }) {
 
       const data = await res.json();
       if (res.ok) {
-        setMessage('✅ Channel updated');
-        onUpdate(data.user); // ✅ update app state
+        setMessage(' Channel updated');
+       if (onUpdate) onUpdate(data.user); // safe optional call
+
       } else {
-        setMessage(`❌ Failed to update: ${data?.msg || res.status}`);
+        setMessage(`Failed to update: ${data?.msg || res.status}`);
       }
     } catch (err) {
-      console.error('❌ Fetch error:', err);
-      setMessage('❌ Network error.');
+      console.error(' Fetch error:', err);
+      setMessage(' Network error.');
     }
   };
 

@@ -94,7 +94,11 @@ export default function App() {
               {/* YouTube Studio Routes - these need full screen layout */}
               <Route path="/studio" element={<YouTubeStudio />} />
               <Route path="/studio/*" element={<YouTubeStudio />} />
-              
+<Route
+  path="/channel/edit"
+  element={<EditChannel user={user} onUpdate={setUser} />}
+/>
+
               {/* Main App Routes with Sidebar */}
               <Route path="/*" element={
                 <div className="app-body">

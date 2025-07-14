@@ -322,49 +322,59 @@ export default function YouTubeStudio({ showUploadModal = false }) {
 
 
   {selectedTab === 'content' && (
-    <div className="studio-content-tab">
-      <div className="channel-header">
-        <div className="channel-info">
-          <div className="channel-avatar">
-            {user ? (
-              <img
-                src={user.profilePicture || '/images/default-pfp.png'}
-                alt="Profile"
-                onClick={() => navigate(`/account/${user._id}`)}
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  objectFit: 'cover'
-                }}
-              />
-            ) : (
-              <div className="avatar-circle">?</div>
-            )}
-          </div>
-          <div className="channel-details">
-            <h1>Your channel</h1>
-            <p>{user ? user.username : 'Loading...'}</p>
-          </div>
-        </div>
-      </div>
-      {user && (
-  <button
-    onClick={() => navigate('/EditChannel', { state: { user } })}
-    style={{
-      marginTop: '10px',
-      padding: '6px 12px',
-      backgroundColor: '#0f0f0f',
-      color: 'white',
-      border: 'none',
-      borderRadius: '4px',
-      cursor: 'pointer',
-    }}
-  >
-    Edit Channel
-  </button>
-)}
+  <div className="studio-content-tab">
+    <div className="channel-header" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+  <div className="channel-avatar">
+    {user?.channel?.avatar ? (
+      <img
+        src={`http://localhost:5000${user.channel.avatar}`}
+        alt="Channel Avatar"
+        onClick={() => window.open(`http://localhost:5000${user.channel.avatar}`, '_blank', 'noopener,noreferrer')}
+        style={{
+          width: 72,
+          height: 72,
+          borderRadius: '50%',
+          cursor: 'pointer',
+          objectFit: 'cover'
+        }}
+      />
+    ) : (
+      <img
+        src="/images/default-pfp.png"
+        alt="Default Avatar"
+        onClick={() => window.open('/images/default-pfp.png', '_blank', 'noopener,noreferrer')}
+        style={{
+          width: 72,
+          height: 72,
+          borderRadius: '50%',
+          cursor: 'pointer',
+          objectFit: 'cover'
+        }}
+      />
+    )}
+  </div>
+  <div className="channel-details" style={{ lineHeight: '1.4' }}>
+    <h2 style={{ margin: 0 }}>{user?.channel?.name || 'Your Channel'}</h2>
+    {user?.channel?.description && (
+      <p style={{ color: '#666', marginTop: 4 }}>{user.channel.description}</p>
+    )}
+  </div>
+</div>
+
+<button
+  onClick={() => navigate('/channel/edit')}
+  style={{
+    marginTop: '10px',
+    padding: '6px 12px',
+    backgroundColor: '#0f0f0f',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+  }}
+>
+  Edit Channel
+</button>
 
 
 
