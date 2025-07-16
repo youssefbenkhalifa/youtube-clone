@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Topbar.css';
 
+
 export default function Topbar({ user, setUser }) {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -22,6 +23,15 @@ export default function Topbar({ user, setUser }) {
     // Navigate to login
     navigate('/login');
   };
+
+  const handleSwitchAccount = () => {
+  // Clears current user session and redirects to login
+  localStorage.removeItem('token');
+  localStorage.removeItem('rememberMe');
+  sessionStorage.removeItem('token');
+  setUser(null);
+  navigate('/login');
+};
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -169,25 +179,31 @@ export default function Topbar({ user, setUser }) {
 
         <div className="user-avatar-container" ref={dropdownRef}>
           <div className="user-avatar" onClick={toggleDropdown}>
-            <img
-              src="/images/user.jpg"
-              alt="User Avatar"
-              className="avatar-image"
-            />
+<img
+src={user?.channel?.avatar ? `http://localhost:5000${user.channel.avatar}?v=${Date.now()}` : "/images/user.jpg"}
+
+  alt="User Avatar"
+  className="avatar-image"
+/>
+
+
           </div>
           {isDropdownOpen && (
             <div className="dropdown-menu">
               <div className="dropdown-header">
                 <div className="dropdown-user-info">
-                  <img
-                    src="/images/user.jpg"
-                    alt="User Avatar"
-                    className="dropdown-avatar"
-                  />
+  <img
+  src={user?.channel?.avatar ? `http://localhost:5000${user.channel.avatar}?v=${Date.now()}` : "/images/user.jpg"}
+
+
+  alt="User Avatar"
+  className="avatar-image"
+/>
+
+
                   <div className="dropdown-user-details">
-                    <div className="dropdown-username">John Doe</div>
-                    <div className="dropdown-email">john.doe@example.com</div>
-                    <div className="dropdown-manage-account">Manage your Google Account</div>
+                   <div className="dropdown-username">{user?.name || "User"}</div>
+<div className="dropdown-email">{user?.email || "example@example.com"}</div>
                   </div>
                 </div>
               </div>
@@ -204,7 +220,7 @@ export default function Topbar({ user, setUser }) {
                 </svg>
                 YouTube Studio
               </div>
-              <div className="dropdown-item">
+              <div className="dropdown-item"onClick={handleSwitchAccount}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#606060"/>
                 </svg>
@@ -216,6 +232,7 @@ export default function Topbar({ user, setUser }) {
                 </svg>
                 Sign out
               </div>
+              
               <div className="dropdown-divider"></div>
               <div className="dropdown-item">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -229,36 +246,16 @@ export default function Topbar({ user, setUser }) {
                 </svg>
                 Language: English
               </div>
-              <div className="dropdown-item">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="#606060"/>
-                </svg>
-                Restricted Mode: Off
-              </div>
-              <div className="dropdown-item">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="#606060"/>
-                </svg>
-                Location: United States
-              </div>
+    
+            
               <div className="dropdown-item">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z" fill="#606060"/>
                 </svg>
                 Help
               </div>
-              <div className="dropdown-item">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z" fill="#606060"/>
-                </svg>
-                Send feedback
-              </div>
-              <div className="dropdown-item">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill="#606060"/>
-                </svg>
-                Keyboard shortcuts
-              </div>
+             
+            
             </div>
           )}
         </div>

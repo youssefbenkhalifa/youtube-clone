@@ -64,7 +64,7 @@ const mockVideos = [
 // Load auth routes immediately (they'll work with or without DB)
 try {
   const authRoutes = require('./routes/auth');
-  const userRoutes = require('./routes/User');
+  const userRoutes = require('./routes/user');
   const videoRoutes = require('./routes/videos');
   app.use('/api/auth', authRoutes);
   app.use('/api/user', userRoutes);

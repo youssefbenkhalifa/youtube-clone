@@ -31,6 +31,8 @@ export default function Login({ setUser }) {
       }
 
       setUser(data.user);
+      console.log("✅ Logged in user:", data.user);
+
       navigate('/'); // Navigate to home page
     } catch (err) {
       setError(err.message);

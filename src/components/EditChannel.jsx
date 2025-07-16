@@ -30,7 +30,8 @@ export default function EditChannel({ user, onUpdate }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
+ const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
     if (!token) {
       setMessage(' No token found.');
       return;

@@ -32,7 +32,21 @@ router.post('/login', async (req, res) => {
     if (!match) return res.status(400).json({ message: 'Invalid credentials' });
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user._id, username: user.username, email: user.email } });
+
+    // ✅ include channel info in response
+    res.json({
+      token,
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        channel: {
+          name: user.channel.name,
+          description: user.channel.description,
+          avatar: user.channel.avatar,
+        }
+      }
+    });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -43,8 +57,21 @@ router.get('/me', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ msg: 'User not found' });
+res.json({
+  user: {
+    _id: user._id,
+    username: user.username,
+    email: user.email,
+    channel: {
+      name: user.channel?.name || '',
+      description: user.channel?.description || '',
+      avatar: user.channel?.avatar || ''
+    }
+  }
+});
 
-    res.json({ user });
+
+
   } catch (err) {
     console.error('❌ Error in /me:', err);
     res.status(500).json({ msg: 'Server error' });

@@ -32,13 +32,18 @@ router.put('/channel', auth, upload.single('avatar'), async (req, res) => {
 
     // ✅ Handle avatar upload
     if (req.file) {
-      const ext = path.extname(req.file.originalname);
-      const oldPath = req.file.path;
-      const newPath = `${oldPath}${ext}`;
-      fs.renameSync(oldPath, newPath);
-      user.channel.avatar = `/uploads/${path.basename(newPath)}`;
-    }
+  const ext = path.extname(req.file.originalname);
+  const oldPath = req.file.path;
 
+  // 🔥 Remove extension if already present
+  const cleanPath = oldPath.replace(ext, '');
+  const newPath = `${cleanPath}${ext}`;
+
+  fs.renameSync(oldPath, newPath);
+
+  // Add cache-busting query string to avoid stale avatars
+  user.channel.avatar = `/uploads/${path.basename(newPath)}?v=${Date.now()}`;
+}
     await user.save();
 
     // ✅ Return structured and clean response

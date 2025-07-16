@@ -88,19 +88,18 @@ export default function YouTubeStudio({ showUploadModal = false }) {
       navigate('/studio', { replace: true });
     }
   }, [location.search, navigate]);
+useEffect(() => {
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+  if (!token) return; // ✅ Prevent fetch if not logged in
 
-  useEffect(() => {
   const fetchUser = async () => {
     try {
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      console.log('📦 Fetching user with token:', token); // 🔍
       const res = await fetch('http://localhost:5000/api/auth/me', {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
       const data = await res.json();
-      console.log('👤 User fetch result:', data); // 🔍
       if (data && data.user && data.user._id) {
         setUser(data.user);
       } else {
@@ -110,8 +109,10 @@ export default function YouTubeStudio({ showUploadModal = false }) {
       console.error('❌ Failed to load user info', err);
     }
   };
+
   fetchUser();
 }, []);
+
 
   const handleBackToYouTube = () => {
     navigate('/');

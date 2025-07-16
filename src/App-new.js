@@ -50,7 +50,16 @@ export default function App() {
                   {/* Studio Routes */}
                   <Route path="/studio" element={<YourVideos />} />
                   <Route path="/studio/videos" element={<YourVideos />} />
-                  <Route path="/studio/channel" element={<EditChannel user={user} setUser={setUser} />} />
+                 <Route
+  path="/studio/channel"
+  element={
+    <EditChannel
+      user={user}
+      onUpdate={(updatedUser) => setUser(updatedUser)}
+    />
+  }
+/>
+
                   <Route path="/studio/analytics" element={<div>Analytics Coming Soon</div>} />
                   <Route path="/studio/content" element={<div>Content Management Coming Soon</div>} />
                   

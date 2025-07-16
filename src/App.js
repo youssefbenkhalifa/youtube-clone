@@ -98,6 +98,16 @@ export default function App() {
   path="/channel/edit"
   element={<EditChannel user={user} onUpdate={setUser} />}
 />
+ <Route
+  path="/studio/channel"
+  element={
+    <EditChannel
+      user={user}
+      onUpdate={(updatedUser) => setUser(updatedUser)}
+    />
+  }
+/>
+
 
               {/* Main App Routes with Sidebar */}
               <Route path="/*" element={
