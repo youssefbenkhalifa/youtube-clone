@@ -87,10 +87,6 @@ npm start
 npm start
 ```
 
-## 🎥 Demo
-
-> A demo video and team contribution report will be linked here upon completion.
-
 ## 📄 License
 
 This project is made as part of CMPS278 – Web Design & Programming at the American University of Beirut.
