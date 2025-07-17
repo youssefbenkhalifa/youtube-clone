@@ -49,25 +49,19 @@ A full stack YouTube-inspired web application built with **React**, **Node.js**,
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/myyoutube-clone.git
-cd myyoutube-clone
+git clone https://github.com/youssefbenkhalifa/youtube-clone
+cd youtube-clone
 ```
 
 2. Install server dependencies:
 
 ```bash
-cd server
+cd backend
 npm install
 ```
 
-3. Install client dependencies:
 
-```bash
-cd ../client
-npm install
-```
-
-4. Create environment variables:
+3. Create environment variables:
 
 Set up a `.env` file in the server directory with the following:
 
@@ -77,7 +71,7 @@ MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
 ```
 
-5. Run the app:
+4. Run the app:
 
 ```bash
 # In server/
