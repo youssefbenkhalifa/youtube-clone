@@ -1,4 +1,4 @@
-# 🎬 MyYouTube Clone
+# 🎬 YouTube Clone
 
 A full stack YouTube-inspired web application built with **React**, **Node.js**, and **MongoDB**. Users can upload, watch, and manage videos while interacting through likes, comments, and subscriptions.
 
