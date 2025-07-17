@@ -1,164 +1,256 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import './Channel.css';
 import VideoCard from './VideoCard';
 
-const channelsData = {
-  'American University of Beirut': {
-    name: 'American University of Beirut',
-    handle: '@aub_lebanon',
-    subscribers: '22.2K subscribers',
-    videoCount: '1.2K videos',
-    description: 'الجامعة الأميركية في بيروت - جامعة لبنان ...more',
-    website: 'aub.edu.lb',
-    coverImage: '/images/thumbnail.jpg',
-    avatar: '/images/user.jpg',
-    isSubscribed: false
-  },
-  'TechChannel': {
-    name: 'TechChannel',
-    handle: '@techchannel',
-    subscribers: '156K subscribers',
-    videoCount: '2.5K videos',
-    description: 'Your daily dose of technology news and reviews',
-    website: 'techchannel.com',
-    coverImage: '/images/thumbnail.jpg',
-    avatar: '/images/user.jpg',
-    isSubscribed: false
-  },
-  'Science Today': {
-    name: 'Science Today',
-    handle: '@sciencetoday',
-    subscribers: '89K subscribers',
-    videoCount: '890 videos',
-    description: 'Exploring the wonders of science and discovery',
-    website: 'sciencetoday.org',
-    coverImage: '/images/thumbnail.jpg',
-    avatar: '/images/user.jpg',
-    isSubscribed: false
-  },
-  'Education Hub': {
-    name: 'Education Hub',
-    handle: '@educationhub',
-    subscribers: '234K subscribers',
-    videoCount: '3.1K videos',
-    description: 'Quality educational content for all ages',
-    website: 'educationhub.edu',
-    coverImage: '/images/thumbnail.jpg',
-    avatar: '/images/user.jpg',
-    isSubscribed: false
-  },
-  'Creative Studio': {
-    name: 'Creative Studio',
-    handle: '@creativestudio',
-    subscribers: '67K subscribers',
-    videoCount: '450 videos',
-    description: 'Unleashing creativity through digital art and design',
-    website: 'creativestudio.art',
-    coverImage: '/images/thumbnail.jpg',
-    avatar: '/images/user.jpg',
-    isSubscribed: false
-  },
-  'News Network': {
-    name: 'News Network',
-    handle: '@newsnetwork',
-    subscribers: '567K subscribers',
-    videoCount: '8.2K videos',
-    description: 'Breaking news and in-depth analysis',
-    website: 'newsnetwork.com',
-    coverImage: '/images/thumbnail.jpg',
-    avatar: '/images/user.jpg',
-    isSubscribed: false
-  },
-  'Learning Zone': {
-    name: 'Learning Zone',
-    handle: '@learningzone',
-    subscribers: '123K subscribers',
-    videoCount: '1.8K videos',
-    description: 'Interactive learning experiences for students',
-    website: 'learningzone.edu',
-    coverImage: '/images/thumbnail.jpg',
-    avatar: '/images/user.jpg',
-    isSubscribed: false
-  },
-  'Innovation Lab': {
-    name: 'Innovation Lab',
-    handle: '@innovationlab',
-    subscribers: '98K subscribers',
-    videoCount: '672 videos',
-    description: 'Cutting-edge technology and innovation',
-    website: 'innovationlab.tech',
-    coverImage: '/images/thumbnail.jpg',
-    avatar: '/images/user.jpg',
-    isSubscribed: false
-  }
-};
-
-const generateChannelVideos = (channelName) => [
-  {
-    title: `Latest from ${channelName}`,
-    author: channelName,
-    views: '241 views',
-    date: '1 day ago',
-    thumbnail: '/images/thumbnail.jpg',
-    duration: '0:32'
-  },
-  ...Array.from({ length: 8 }, (_, i) => ({
-    title: `${channelName} Video ${i + 2}`,
-    author: channelName,
-    views: `${(i + 1) * 15}K views`,
-    date: `${i + 1} weeks ago`,
-    thumbnail: '/images/thumbnail.jpg',
-    duration: `${Math.floor(Math.random() * 10) + 1}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`
-  }))
-];
-
 const tabs = ['Home', 'Videos', 'Shorts', 'Live', 'Podcasts', 'Playlists', 'Posts'];
 
-export default function Channel({ channelName = 'American University of Beirut', onHomeClick, onChannelClick, onVideoClick }) {
+export default function Channel({ onHomeClick, onChannelClick, onVideoClick, user }) {
+  const { handle } = useParams(); // Get handle from URL
   const [activeTab, setActiveTab] = useState('Home');
-  
-  const channelData = channelsData[channelName] || channelsData['American University of Beirut'];
-  const [isSubscribed, setIsSubscribed] = useState(channelData.isSubscribed);
-  const channelVideos = generateChannelVideos(channelName);
+  const [channelData, setChannelData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [subscriberCount, setSubscriberCount] = useState(0);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
 
-  const handleSubscribe = () => {
-    setIsSubscribed(!isSubscribed);
+  // Check if this is the user's own channel
+  const isOwnChannel = user && channelData && (
+    user.id === channelData.id || 
+    user.username === channelData.username ||
+    user.channel?.handle === handle
+  );
+
+  // Format video data for VideoCard component
+  const formatVideoData = (video) => {
+    // Calculate time ago
+    const timeAgo = (date) => {
+      const now = new Date();
+      const videoDate = new Date(date);
+      const diffInSeconds = Math.floor((now - videoDate) / 1000);
+      
+      if (diffInSeconds < 60) return 'Just now';
+      if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+      if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+      if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+      if (diffInSeconds < 2629746) return `${Math.floor(diffInSeconds / 604800)} weeks ago`;
+      if (diffInSeconds < 31556952) return `${Math.floor(diffInSeconds / 2629746)} months ago`;
+      return `${Math.floor(diffInSeconds / 31556952)} years ago`;
+    };
+
+    return {
+      id: video._id,
+      _id: video._id,
+      title: video.title,
+      author: channelData?.channel?.name || channelData?.username || 'Unknown Channel',
+      uploader: {
+        username: channelData?.username,
+        channel: channelData?.channel
+      },
+      views: `${video.views?.toLocaleString() || 0} views`,
+      date: timeAgo(video.createdAt),
+      // uncomment the below line after testing
+      //       thumbnail: video.thumbnail ? `http://localhost:5000${video.thumbnail}` : '/images/thumbnail.jpg',
+
+      thumbnail: video.thumbnail ? `${video.thumbnail}` : '/images/thumbnail.jpg',
+      duration: video.duration || '0:00',
+      verified: false // TODO: Implement verification system
+    };
   };
 
+  useEffect(() => {
+    const fetchChannelData = async () => {
+      if (!handle) return;
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        const headers = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`http://localhost:5000/api/user/channel/${handle}`, {
+          headers
+        });
+
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+          console.log('🔍 Channel data received:', data.data); // Debug log
+          setChannelData(data.data);
+          setSubscriberCount(data.data.channel?.subscriberCount || 0);
+          
+          // Check subscription status if user is logged in
+          const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+          if (token && data.data.id) {
+            console.log('🔍 Checking subscription for channel ID:', data.data.id); // Debug log
+            checkSubscriptionStatus(data.data.id);
+          }
+        } else {
+          setError(data.message || 'Channel information not available');
+        }
+      } catch (err) {
+        console.error('Error fetching channel data:', err);
+        setError('Failed to load channel information');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChannelData();
+  }, [handle]);
+
+  // Check subscription status
+  const checkSubscriptionStatus = async (channelId) => {
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/subscriptions/status/${channelId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setIsSubscribed(data.isSubscribed);
+        setSubscriberCount(data.subscriberCount);
+      }
+    } catch (error) {
+      console.error('Error checking subscription status:', error);
+    }
+  };
+
+  // Handle subscription toggle
+  const handleSubscribe = async () => {
+    if (!channelData || !channelData.id) {
+      console.error('❌ No channel data or ID available:', channelData);
+      alert('Channel information not available');
+      return;
+    }
+    
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) {
+      alert('Please log in to subscribe to channels');
+      return;
+    }
+
+    console.log('🔍 Subscribing to channel ID:', channelData.id); // Debug log
+    setSubscriptionLoading(true);
+    
+    try {
+      const endpoint = isSubscribed ? 'unsubscribe' : 'subscribe';
+      const response = await fetch(`http://localhost:5000/api/subscriptions/${endpoint}/${channelData.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setIsSubscribed(data.isSubscribed);
+        setSubscriberCount(data.subscriberCount);
+      } else {
+        alert(data.message || 'Failed to update subscription');
+      }
+    } catch (error) {
+      console.error('Error updating subscription:', error);
+      alert('Failed to update subscription');
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="channel-page">
+        <div className="loading-state">
+          <div className="loading-spinner"></div>
+          <p>Loading channel...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="channel-page">
+        <div className="error-state">
+          <h2>Channel not found</h2>
+          <p>{error}</p>
+          <button onClick={() => window.history.back()}>Go Back</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!channelData) {
+    return (
+      <div className="channel-page">
+        <div className="error-state">
+          <h2>Channel not found</h2>
+          <p>The channel you're looking for doesn't exist.</p>
+          <button onClick={() => window.history.back()}>Go Back</button>
+        </div>
+      </div>
+    );
+  }
+  const getAvatarUrl = () => {
+    const avatar = channelData?.channel?.avatar || channelData?.profilePicture;
+    if (!avatar) return '/images/user.jpg';
+    if (avatar.startsWith('/uploads/')) {
+      return `http://localhost:5000${avatar}`;
+    }
+    return avatar;
+  };
+  const channelAvatar = getAvatarUrl();
   return (
     <div className="channel-page">
       <div className="channel-header">
         <img 
-          src={channelData.coverImage} 
+          src={channelData.channel?.banner || '/images/thumbnail.jpg'} 
           alt="Channel cover" 
           className="cover-image" 
         />
         
         <div className="channel-info">
           <img 
-            src={channelData.avatar} 
-            alt={channelData.name} 
+            src={channelAvatar} 
+            alt={channelData.channel?.name || channelData.username} 
             className="channel-avatar-img" 
           />
           
           <div className="channel-text">
-            <h2>{channelData.name}</h2>
+            <h2>{channelData.channel?.handle || channelData.username}</h2>
             <div className="channel-meta">
-              <span className="channel-handle">{channelData.handle}</span>
-              <span>  {channelData.subscribers}</span>
-              <span>  {channelData.videoCount}</span>
+              <span className="channel-handle">{channelData.channel?.handle || `@${channelData.username}`}</span>
+              <span>  {subscriberCount.toLocaleString()} subscribers</span>
+              <span>  {channelData.channel?.videoCount || 0} videos</span>
             </div>
-            <p className="channel-description">{channelData.description}</p>
-            <a href={`https://${channelData.website}`} className="channel-link" target="_blank" rel="noopener noreferrer">
-              {channelData.website}
-            </a>
+            <p className="channel-description">{channelData.channel?.description || ''}</p>
+            {channelData.channel?.category && (
+              <span className="channel-category">Category: {channelData.channel.category}</span>
+            )}
           </div>
           
           <button 
-            className={`subscribe-btn ${isSubscribed ? 'subscribed' : ''}`}
+            className={`subscribe-btn ${isSubscribed ? 'subscribed' : ''} ${isOwnChannel ? 'own-channel' : ''}`}
             onClick={handleSubscribe}
+            disabled={subscriptionLoading || isOwnChannel}
           >
-            {isSubscribed ? 'Subscribed' : 'Subscribe'}
+            {isOwnChannel ? 'Your Channel' : (subscriptionLoading ? 'Loading...' : (isSubscribed ? 'Subscribed' : 'Subscribe'))}
           </button>
         </div>
       </div>
@@ -178,61 +270,137 @@ export default function Channel({ channelName = 'American University of Beirut',
       <div className="channel-content">
         {activeTab === 'Home' && (
           <div className="channel-home">
-            <div className="featured-section">
-              <h3>Featured Video</h3>
-              <div className="featured-video">
-                <VideoCard {...channelVideos[0]} onChannelClick={onChannelClick} onVideoClick={onVideoClick} />
+            {/* Debug logging */}
+            {console.log('🔍 Channel Data:', channelData)}
+            {console.log('🌟 Featured Video:', channelData?.featuredVideo)}
+            {console.log('📹 All Videos:', channelData?.videos)}
+            
+            {/* Featured Video Section */}
+            {channelData.featuredVideo ? (
+              <div className="featured-section">
+                <h3>Featured Video</h3>
+                <div className="featured-video">
+                  <VideoCard 
+                    {...formatVideoData(channelData.featuredVideo)} 
+                    onChannelClick={onChannelClick} 
+                    onVideoClick={onVideoClick} 
+                  />
+                </div>
               </div>
-            </div>
+            ) : (
+              channelData.videos && channelData.videos.length > 0 && (
+                <div className="featured-section">
+                  <h3>Latest Video</h3>
+                  <div className="featured-video">
+                    <VideoCard 
+                      {...formatVideoData(channelData.videos[0])} 
+                      onChannelClick={onChannelClick} 
+                      onVideoClick={onVideoClick} 
+                    />
+                  </div>
+                </div>
+              )
+            )}
 
-            <div className="for-you-section">
-              <h3>For You</h3>
-              <div className="video-grid">
-                {channelVideos.slice(1, 5).map((video, index) => (
-                  <VideoCard key={index} {...video} onChannelClick={onChannelClick} onVideoClick={onVideoClick} />
-                ))}
+            {/* Recent Videos Section */}
+            {channelData.videos && channelData.videos.length > 0 && (
+              (() => {
+                const filteredVideos = channelData.videos
+                  .filter(video => !channelData.featuredVideo || video._id !== channelData.featuredVideo._id)
+                  .slice(0, 4);
+                
+                return filteredVideos.length > 0 && (
+                  <div className="for-you-section">
+                    <h3>Recent Videos</h3>
+                    <div className="video-grid">
+                      {filteredVideos.map((video, index) => (
+                        <VideoCard 
+                          key={video._id || index} 
+                          {...formatVideoData(video)} 
+                          onChannelClick={onChannelClick} 
+                          onVideoClick={onVideoClick} 
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()
+            )}
+
+            {/* No content message */}
+            {(!channelData.videos || channelData.videos.length === 0) && !channelData.featuredVideo && (
+              <div className="no-content">
+                <h3>No videos yet</h3>
+                <p>This channel hasn't uploaded any videos yet.</p>
               </div>
-            </div>
+            )}
           </div>
         )}
 
         {activeTab === 'Videos' && (
           <div className="channel-videos">
-            <div className="video-grid">
-              {channelVideos.map((video, index) => (
-                <VideoCard key={index} {...video} onChannelClick={onChannelClick} onVideoClick={onVideoClick} />
-              ))}
-            </div>
+            {channelData.videos && channelData.videos.length > 0 ? (
+              <div className="video-grid">
+                {channelData.videos.map((video, index) => (
+                  <VideoCard 
+                    key={video._id || index} 
+                    {...formatVideoData(video)} 
+                    onChannelClick={onChannelClick} 
+                    onVideoClick={onVideoClick} 
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="no-content">
+                <h3>No videos available</h3>
+                <p>This channel hasn't uploaded any videos yet.</p>
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === 'Shorts' && (
           <div className="channel-shorts">
-            <p>No shorts available</p>
+            <div className="no-content">
+              <h3>No shorts available</h3>
+              <p>This channel hasn't uploaded any shorts yet.</p>
+            </div>
           </div>
         )}
 
         {activeTab === 'Live' && (
           <div className="channel-live">
-            <p>No live streams available</p>
+            <div className="no-content">
+              <h3>No live streams available</h3>
+              <p>This channel doesn't have any live streams.</p>
+            </div>
           </div>
         )}
 
         {activeTab === 'Podcasts' && (
           <div className="channel-podcasts">
-            <p>No podcasts available</p>
+            <div className="no-content">
+              <h3>No podcasts available</h3>
+              <p>This channel doesn't have any podcasts.</p>
+            </div>
           </div>
         )}
 
         {activeTab === 'Playlists' && (
           <div className="channel-playlists">
-            <p>No playlists available</p>
+            <div className="no-content">
+              <h3>No playlists available</h3>
+              <p>This channel doesn't have any playlists.</p>
+            </div>
           </div>
         )}
 
         {activeTab === 'Posts' && (
           <div className="channel-posts">
-            <p>No posts available</p>
+            <div className="no-content">
+              <h3>No posts available</h3>
+              <p>This channel doesn't have any community posts.</p>
+            </div>
           </div>
         )}
       </div>

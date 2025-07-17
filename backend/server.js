@@ -15,10 +15,16 @@
   app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
   // Routes
   const authRoutes = require('./routes/auth');
-  const userRoutes = require('./routes/user');
+  const userRoutes = require('./routes/User');
+  const videoRoutes = require('./routes/videos');
+  const subscriptionRoutes = require('./routes/subscriptions');
+  const watchHistoryRoutes = require('./routes/watchHistory');
 
   app.use('/api/auth', authRoutes);
   app.use('/api/user', userRoutes);
+  app.use('/api/videos', videoRoutes);
+  app.use('/api/subscriptions', subscriptionRoutes);
+  app.use('/api/user', watchHistoryRoutes);
 
   // MongoDB Connection
   mongoose.connect(process.env.MONGO_URI, {

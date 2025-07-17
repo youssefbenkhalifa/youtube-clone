@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import './login.css';
 
-export default function Login({ onLoginSuccess, onSwitchToSignup }) {
+export default function Login({ setUser }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,15 +19,19 @@ export default function Login({ onLoginSuccess, onSwitchToSignup }) {
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.msg || 'Login failed');
+      if (!res.ok) throw new Error(data.message || data.msg || 'Login failed');
 
+      // Store token based on remember me preference
       if (remember) {
         localStorage.setItem('token', data.token);
+        localStorage.setItem('rememberMe', 'true');
       } else {
         sessionStorage.setItem('token', data.token);
+        localStorage.removeItem('rememberMe');
       }
 
-      onLoginSuccess(data.user);
+      setUser(data.user);
+      navigate('/'); // Navigate to home page
     } catch (err) {
       setError(err.message);
     }
@@ -64,10 +70,8 @@ export default function Login({ onLoginSuccess, onSwitchToSignup }) {
       </form>
       {error && <p className="error">{error}</p>}
       <p>
-        Don’t have an account?{' '}
-        <button type="button" onClick={onSwitchToSignup}>
-          Sign Up
-        </button>
+        Don't have an account?{' '}
+        <Link to="/signup">Sign Up</Link>
       </p>
     </div>
   );

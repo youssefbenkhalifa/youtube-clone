@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import './App.css';
 
 import Sidebar from './components/Sidebar';
@@ -10,104 +11,169 @@ import Trending from './components/Trending';
 import Subscriptions from './components/Subscriptions';
 import Library from './components/Library';
 import History from './components/History';
-import YourVideos from './components/YourVideos';
 import WatchLater from './components/WatchLater';
 import LikedVideos from './components/LikedVideos';
+import Login from './components/login';
+import Signup from './components/signup';
+import EditProfile from './components/EditProfile';
 import YouTubeStudio from './components/YouTubeStudio';
+import VideoEdit from './components/VideoEdit';
+import { SidebarProvider, useSidebar } from './context/SidebarContext';
+
+// Main App Content Component (needs to be separate to use sidebar context)
+function MainAppContent({ user, setUser }) {
+  const { isSidebarCollapsed } = useSidebar();
+  
+  return (
+    <div className={isSidebarCollapsed ? 'collapsed-sidebar' : ''}>
+      <Topbar user={user} setUser={setUser} />
+      <Sidebar user={user} />
+      <div className="main">
+        <Routes>
+          <Route path="/" element={<VideoGrid />} />
+          <Route path="/trending" element={<Trending />} />
+          <Route path="/subscriptions" element={<Subscriptions />} />
+          <Route path="/library" element={<Library />} />
+          <Route path="/history" element={<History />} />
+          <Route path="/channel/:handle" element={<Channel user={user} />} />
+          <Route path="/watch/:videoId" element={<VideoWatch />} />
+          
+          {/* User Routes */}
+          <Route path="/playlist/watch-later" element={<WatchLater />} />
+          <Route path="/playlist/liked-videos" element={<LikedVideos />} />
+          
+          {/* Catch all - redirect to home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
+    </div>
+  );
+}
+
+// Protected Route Component - only for routes that require authentication
+function ProtectedRoute({ children, user }) {
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
+
+  if (!user) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh' 
+      }}>
+        <div>Please log in to access this page...</div>
+      </div>
+    );
+  }
+
+  return children;
+}
 
 export default function App() {
-  const [currentView, setCurrentView] = useState('home');
-  const [currentChannel, setCurrentChannel] = useState(null);
-  const [currentVideo, setCurrentVideo] = useState(null);
-  const [isStudioOpen, setIsStudioOpen] = useState(false);
-  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleChannelClick = (channelName) => {
-    setCurrentChannel(channelName);
-    setCurrentView('channel');
-    setCurrentVideo(null);
-  };
+  // Check for existing authentication on app load
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        // Check for stored token (localStorage first, then sessionStorage)
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        
+        if (token) {
+          // Verify token with backend
+          const res = await fetch('http://localhost:5000/api/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (res.ok) {
+            const data = await res.json();
+            setUser(data.user);
+          } else {
+            // Token is invalid, remove it
+            localStorage.removeItem('token');
+            localStorage.removeItem('rememberMe');
+            sessionStorage.removeItem('token');
+          }
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        // Remove invalid tokens
+        localStorage.removeItem('token');
+        localStorage.removeItem('rememberMe');
+        sessionStorage.removeItem('token');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleVideoClick = (video) => {
-    setCurrentVideo(video);
-    setCurrentView('watch');
-  };
+    checkAuth();
+  }, []);
 
-  const handleNavigate = (view) => {
-    setCurrentView(view);
-    setCurrentChannel(null);
-    setCurrentVideo(null);
-  };
-
-  const handleStudioOpen = (withUpload = false) => {
-    setIsStudioOpen(true);
-    setShowUploadModal(withUpload);
-  };
-
-  const handleStudioClose = () => {
-    setIsStudioOpen(false);
-    setShowUploadModal(false);
-  };
-
-  const renderMainContent = () => {
-    switch (currentView) {
-      case 'trending':
-        return <Trending onChannelClick={handleChannelClick} onVideoClick={handleVideoClick} />;
-      case 'subscriptions':
-        return <Subscriptions />;
-      case 'library':
-        return <Library />;
-      case 'history':
-        return <History />;
-      case 'your-videos':
-        return <YourVideos />;
-      case 'watch-later':
-        return <WatchLater />;
-      case 'liked-videos':
-        return <LikedVideos />;
-      case 'channel':
-        return (
-          <Channel 
-            channelName={currentChannel}
-            onHomeClick={() => handleNavigate('home')}
-            onChannelClick={handleChannelClick}
-            onVideoClick={handleVideoClick}
-          />
-        );
-      case 'watch':
-        return (
-          <VideoWatch 
-            video={currentVideo}
-            onChannelClick={handleChannelClick}
-            onVideoClick={handleVideoClick}
-            onHomeClick={() => handleNavigate('home')}
-          />
-        );
-      case 'home':
-      default:
-        return <VideoGrid onChannelClick={handleChannelClick} onVideoClick={handleVideoClick} />;
-    }
-  };
+  // Show loading while checking authentication
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh' 
+      }}>
+        <div>Loading...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="app">
-      {isStudioOpen ? (
-        <YouTubeStudio 
-          onClose={handleStudioClose}
-          showUploadModal={showUploadModal}
-        />
-      ) : (
-        <>
-          <Sidebar onNavigate={handleNavigate} currentView={currentView} />
-          <div className="main">
-            <Topbar 
-              onLogoClick={() => handleNavigate('home')}
-              onStudioOpen={handleStudioOpen}
-            />
-            {renderMainContent()}
-          </div>
-        </>
-      )}
-    </div>
+    <Router>
+      <div className="App">
+        <SidebarProvider>
+          <Routes>
+            {/* Authentication Routes */}
+            <Route path="/login" element={<Login setUser={setUser} />} />
+            <Route path="/signup" element={<Signup setUser={setUser} />} />
+            
+            {/* Protected Routes - require authentication */}
+            <Route path="/studio" element={
+              <ProtectedRoute user={user}>
+                <YouTubeStudio />
+              </ProtectedRoute>
+            } />
+            <Route path="/studio/video/edit/:videoId" element={
+              <ProtectedRoute user={user}>
+                <VideoEdit />
+              </ProtectedRoute>
+            } />
+            <Route path="/studio/*" element={
+              <ProtectedRoute user={user}>
+                <YouTubeStudio />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile/edit" element={
+              <ProtectedRoute user={user}>
+                <EditProfile user={user} setUser={setUser} />
+              </ProtectedRoute>
+            } />
+            <Route path="/channel" element={
+              <ProtectedRoute user={user}>
+                <Navigate to={`/channel/${user?.channel?.handle || user?.username}`} replace />
+              </ProtectedRoute>
+            } />
+            
+            {/* Public Routes - no authentication required */}
+            <Route path="/*" element={<MainAppContent user={user} setUser={setUser} />} />
+          </Routes>
+        </SidebarProvider>
+      </div>
+    </Router>
   );
 }

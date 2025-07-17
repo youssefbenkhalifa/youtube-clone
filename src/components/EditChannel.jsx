@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 export default function EditChannel({ user, onUpdate }) {
   const [channel, setChannel] = useState({
     name: '',
+    handle: '',
     avatarFile: null,
     description: '',
   });
@@ -14,6 +15,7 @@ export default function EditChannel({ user, onUpdate }) {
       setChannel((prev) => ({
         ...prev,
         name: user.channel.name || '',
+        handle: user.channel.handle || '',
         description: user.channel.description || '',
       }));
     }
@@ -38,6 +40,7 @@ export default function EditChannel({ user, onUpdate }) {
 
     const formData = new FormData();
     formData.append('name', channel.name);
+    formData.append('handle', channel.handle);
     formData.append('description', channel.description);
     if (channel.avatarFile) {
       formData.append('avatar', channel.avatarFile);
@@ -76,6 +79,13 @@ export default function EditChannel({ user, onUpdate }) {
           value={channel.name}
           onChange={handleChange}
           required
+        />
+        <input
+          type="text"
+          name="handle"
+          placeholder="Channel Handle (e.g., @myhandle)"
+          value={channel.handle}
+          onChange={handleChange}
         />
         <input
           type="file"

@@ -1,51 +1,349 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useSidebar } from '../context/SidebarContext';
 import './Sidebar.css';
 
-const items = [
-  { label: 'Home', view: 'home', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M10 20V14H14V20H19V12H22L12 3L2 12H5V20" fill="#606060" /></svg> },
-  { label: 'Trending', view: 'trending', icon: <svg  width="14" height="18" viewBox="0 0 14 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M12.5298 8.2C12.2998 7.9 12.0298 7.64 11.7698 7.38C11.1198 6.78 10.3698 6.35 9.73985 5.72C8.27985 4.26 7.95985 1.85 8.88985 0C7.98985 0.23 7.13984 0.75 6.43985 1.32C3.89985 3.4 2.89985 7.07 4.09985 10.22C4.13985 10.32 4.17985 10.42 4.17985 10.55C4.17985 10.77 4.02985 10.97 3.82985 11.05C3.60985 11.15 3.36985 11.09 3.18985 10.93C3.12985 10.88 3.08985 10.83 3.03985 10.76C1.93985 9.33 1.75985 7.28 2.50985 5.64C0.869846 7 -0.000154719 9.3 0.119845 11.47C0.159845 11.97 0.219845 12.47 0.389845 12.97C0.529845 13.57 0.789846 14.17 1.10985 14.7C2.14985 16.43 3.97985 17.67 5.94985 17.92C8.04985 18.19 10.2998 17.8 11.9098 16.32C13.7098 14.66 14.3598 12.02 13.4098 9.72L13.2798 9.46C13.0798 9.01 12.8098 8.59 12.4998 8.21L12.5298 8.2ZM9.42985 14.5C9.14985 14.74 8.69985 15 8.34985 15.1C7.24985 15.48 6.14985 14.94 5.46985 14.28C6.66985 14 7.36985 13.12 7.56985 12.23C7.73985 11.43 7.42985 10.77 7.29985 10C7.17985 9.26 7.19985 8.63 7.49985 7.94C7.64985 8.32 7.84985 8.7 8.07985 9C8.83985 10 10.0298 10.44 10.2798 11.8C10.3198 11.94 10.3398 12.08 10.3398 12.23C10.3698 13.05 10.0198 13.95 9.41985 14.49L9.42985 14.5Z" fill="#606060"/></svg> },
-  { label: 'Subscriptions', view: 'subscriptions', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M18.7002 8.69995H5.3002V6.99995H18.7002V8.69995ZM17.0002 3.69995H7.0002V5.29995H17.0002V3.69995ZM20.3002 12V18.7C20.3002 19.7 19.6002 20.2999 18.7002 20.2999H5.3002C4.3002 20.2999 3.7002 19.6 3.7002 18.7V12C3.7002 11 4.4002 10.3 5.3002 10.3H18.7002C19.7002 10.3 20.3002 11.1 20.3002 12ZM15.3002 15.3L10.3002 12.6V18L15.3002 15.3Z" fill="#606060"/>
-</svg> },
-  { label: 'Library', view: 'library', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M4 6H2V20C2 21.1 2.9 22 4 22H18V20H4V6ZM20 2H8C6.9 2 6 2.9 6 4V16C6 17.1 6.9 18 8 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM12 14.5V5.5L18 10L12 14.5Z" fill="#606060"/>
-</svg>
- },
-  { label: 'History', view: 'history', icon: <svg width="20" height="17" viewBox="0 0 20 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M11.396 0C6.67358 0 2.85418 3.81212 2.85418 8.5H0L3.70524 12.1782L3.74676 12.3121L7.58692 8.5H4.7535C4.7535 4.85273 7.73223 1.88545 11.4167 1.88545C15.0908 1.88545 18.0592 4.85273 18.0592 8.5C18.0592 12.1473 15.0908 15.1145 11.4167 15.1145C9.56928 15.1145 7.90867 14.3624 6.70472 13.157L5.35547 14.4964C6.9123 16.0418 9.03996 17 11.4063 17C16.1598 17 20 13.1879 20 8.5C20 3.80182 16.1598 0 11.4271 0H11.396ZM10.4619 4.71879V9.45818L14.5304 11.8279L15.2154 10.6945L11.8941 8.73697V4.71879H10.4619Z" fill="#606060"/>
-</svg> },
-  { label: 'Your videos', view: 'your-videos', icon: <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M15.4001 2.5999V15.3999H2.60014V2.5999H15.4001ZM15.4001 0.799899H2.60014C2.12275 0.799899 1.66492 0.989541 1.32735 1.32711C0.989786 1.66467 0.800143 2.12251 0.800143 2.5999V15.3999C0.78653 15.6446 0.823013 15.8894 0.907356 16.1195C0.991699 16.3495 1.12213 16.56 1.29065 16.7378C1.45917 16.9157 1.66224 17.0573 1.88741 17.154C2.11258 17.2506 2.35511 17.3003 2.60014 17.2999H15.4001C15.6535 17.3144 15.907 17.2752 16.1441 17.1849C16.3812 17.0945 16.5965 16.955 16.7759 16.7756C16.9553 16.5962 17.0947 16.3809 17.1851 16.1438C17.2754 15.9067 17.3147 15.6532 17.3001 15.3999V2.5999C17.3005 2.35486 17.2509 2.11233 17.1542 1.88716C17.0576 1.66199 16.916 1.45893 16.7381 1.2904C16.5602 1.12188 16.3498 0.991455 16.1197 0.907112C15.8897 0.822769 15.6448 0.786286 15.4001 0.799899Z" fill="#606060"/>
-<path d="M7.2002 6V12.5L12.2002 9.3L7.2002 6.1V6Z" fill="#606060"/>
-</svg>
- },
-  { label: 'Watch later', view: 'watch-later', icon: <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M8.99992 0.669922C4.41992 0.669922 0.669922 4.41992 0.669922 8.99992C0.669922 13.5799 4.41992 17.3299 8.99992 17.3299C13.5799 17.3299 17.3299 13.5799 17.3299 8.99992C17.3299 4.41992 13.5799 0.669922 8.99992 0.669922ZM12.4999 12.4999L8.16992 9.82992V4.82992H9.41992V9.16992L13.1699 11.4199L12.4999 12.4999Z" fill="#606060"/>
-</svg>
-},
-  { label: 'Liked videos', view: 'liked-videos', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M3.75 18.75H6.75V9.75H3.75V18.75ZM20.25 10.5C20.25 9.67 19.57 9 18.75 9H14.02L14.72 5.57L14.75 5.33C14.75 5.03 14.62 4.73 14.42 4.53L13.62 3.75L8.7 8.7C8.4 8.96 8.25 9.34 8.25 9.75V17.25C8.25 18.07 8.92 18.75 9.75 18.75H16.5C17.12 18.75 17.65 18.37 17.88 17.85L20.15 12.55C20.21 12.37 20.25 12.19 20.25 12V10.5Z" fill="#606060"/>
-</svg>
- }
-];
+function Sidebar({ user }) {
+  const { isSidebarCollapsed } = useSidebar();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [subscriptionsLoading, setSubscriptionsLoading] = useState(false);
 
-export default function Sidebar({ onNavigate, currentView }) {
+  // Fetch user's subscriptions when component mounts or user changes
+  useEffect(() => {
+    const fetchSubscriptions = async () => {
+      if (!user) {
+        setSubscriptions([]);
+        return;
+      }
+
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (!token) return;
+
+      setSubscriptionsLoading(true);
+      try {
+        const response = await fetch('http://localhost:5000/api/subscriptions/my-subscriptions', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          // Limit to 7 subscriptions for the sidebar
+          setSubscriptions(data.subscriptions.slice(0, 7));
+        }
+      } catch (error) {
+        console.error('Error fetching subscriptions:', error);
+      } finally {
+        setSubscriptionsLoading(false);
+      }
+    };
+
+    fetchSubscriptions();
+  }, [user]);
+
+  // Main navigation items - available to all users
+  const mainItems = [
+    { 
+      label: 'Home', 
+      path: '/',
+      icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 3.2L2 12H5V20H11V14H13V20H19V12H22L12 3.2Z" fill="#606060"/>
+      </svg>
+    },
+    { 
+      label: 'Shorts', 
+      path: '/shorts',
+      icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14.8433 17.7561L19.7439 2.24394C19.9756 1.58537 19.4146 0.975609 18.7561 1.24394L3.24394 6.14472C2.4878 6.43902 2.4878 7.5366 3.24394 7.8309L8.4878 9.93902L10.5122 14.9837C10.8065 15.7398 11.9041 15.7398 12.1984 14.9837L14.8433 17.7561Z" fill="#606060"/>
+      </svg>
+    },
+    { 
+      label: 'Subscriptions', 
+      path: '/subscriptions',
+      icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18.7002 8.69995H5.3002V6.99995H18.7002V8.69995ZM17.0002 3.69995H7.0002V5.29995H17.0002V3.69995ZM20.3002 12V18.7C20.3002 19.7 19.6002 20.2999 18.7002 20.2999H5.3002C4.3002 20.2999 3.7002 19.6 3.7002 18.7V12C3.7002 11 4.4002 10.3 5.3002 10.3H18.7002C19.7002 10.3 20.3002 11.1 20.3002 12ZM15.3002 15.3L10.3002 12.6V18L15.3002 15.3Z" fill="#606060"/>
+      </svg> 
+    },
+  ];
+
+  // Authenticated user items - only for logged in users
+  const youItems = user ? [
+    { 
+      label: 'Your channel', 
+      path: '/channel',
+      icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12ZM12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z" fill="#606060"/>
+      </svg>
+    },
+    { 
+      label: 'History', 
+      path: '/history',
+      icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M13.05 9.79L10 7.5v9l3.05-2.29L16 12l-2.95-2.21zm0 0L10 7.5v9l3.05-2.29L16 12l-2.95-2.21z" fill="#606060"/>
+      </svg> 
+    },
+    { 
+      label: 'Your videos', 
+      path: '/studio',
+      icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 4L18 14C18 15.1 17.1 16 16 16L2 16C0.9 16 0 15.1 0 14L0 4C0 2.9 0.9 2 2 2L16 2C17.1 2 18 2.9 18 4ZM12 9L7 6L7 12L12 9Z" fill="#606060"/>
+      </svg>
+    },
+    { 
+      label: 'Watch later', 
+      path: '/playlist/watch-later',
+      icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm1-13h-2v6l5.25 3.15.75-1.23-4.5-2.67V7z" fill="#606060"/>
+      </svg>
+    },
+    { 
+      label: 'Liked videos', 
+      path: '/playlist/liked-videos',
+      icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-1.91l-.01-.01L23 10z" fill="#606060"/>
+      </svg>
+    }
+  ] : [];
+
+  // Public items - for unauthenticated users to encourage sign up
+  const publicItems = !user ? [
+    { 
+      label: 'Sign in to like videos, comment, and subscribe.', 
+      isMessage: true,
+      action: () => navigate('/login')
+    }
+  ] : [];
+
+  // Trending and explore items - available to all users
+  const exploreItems = [
+    { 
+      label: 'Trending', 
+      path: '/trending',
+      icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6h-6z" fill="#606060"/>
+      </svg>
+    },
+    { 
+      label: 'Music', 
+      path: '/channel/music',
+      icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" fill="#606060"/>
+      </svg>
+    },
+    { 
+      label: 'Gaming', 
+      path: '/channel/gaming',
+      icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M15.5 6.5C15.5 5.67 14.83 5 14 5S12.5 5.67 12.5 6.5 13.17 8 14 8s1.5-.67 1.5-1.5zM19.5 12c0-2.5-2.5-4.5-5.5-4.5S8.5 9.5 8.5 12H5c-1.5 0-3 1.5-3 3s1.5 3 3 3h2v4h4v-4h4v4h4v-4h2c1.5 0 3-1.5 3-3s-1.5-3-3-3h-3.5z" fill="#606060"/>
+      </svg>
+    },
+    { 
+      label: 'News', 
+      path: '/channel/news',
+      icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" fill="#606060"/>
+      </svg>
+    },
+    { 
+      label: 'Sports', 
+      path: '/channel/sports',
+      icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M13.49 5.48c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3.6 13.9l1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3c1.3 1.5 3.3 2.5 5.5 2.5v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1l-5.2 2.2v4.7h2v-3.4l1.8-.7-1.6 8.1-4.9-1-.4 2 7 1.4z" fill="#606060"/>
+      </svg>
+    }
+  ];
+
+  // Settings and more items - available to all users
+  const settingsItems = [
+    { 
+      label: 'Settings', 
+      path: '/settings',
+      icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" fill="#606060"/>
+      </svg>
+    },
+    { 
+      label: 'Report history', 
+      path: '/reporthistory',
+      icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" fill="#606060"/>
+      </svg>
+    },
+    { 
+      label: 'Help', 
+      path: '/help',
+      icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" fill="#606060"/>
+      </svg>
+    },
+    { 
+      label: 'Send feedback', 
+      path: '/feedback',
+      icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z" fill="#606060"/>
+      </svg>
+    }
+  ];
+
+  const handleItemClick = (item) => {
+    if (item.isMessage && item.action) {
+      item.action();
+    }
+  };
+
+  // Helper function to get avatar URL for subscriptions
+  const getAvatarUrl = (subscription) => {
+    if (subscription.channel?.avatar) {
+      // If it starts with /uploads/, it's a local file
+      if (subscription.channel.avatar.startsWith('/uploads/')) {
+        return `http://localhost:5000${subscription.channel.avatar}`;
+      }
+      // Otherwise it's an external URL (like Picsum)
+      return subscription.channel.avatar;
+    }
+    if (subscription.profilePicture) {
+      if (subscription.profilePicture.startsWith('/uploads/')) {
+        return `http://localhost:5000${subscription.profilePicture}`;
+      }
+      return subscription.profilePicture;
+    }
+    return '/images/user.jpg';
+  };
+
+  // Helper function to get channel name for subscriptions
+  const getChannelName = (subscription) => {
+    return subscription.channel?.name || subscription.username || 'Unknown Channel';
+  };
+
+  // Helper function to get channel handle for navigation
+  const getChannelHandle = (subscription) => {
+    return subscription.channel?.handle || subscription.username;
+  };
+
+  // Render subscriptions section
+  const renderSubscriptions = () => {
+    if (!user || subscriptions.length === 0) return null;
+
+    return (
+      <div className="sidebar-section">
+        <div className="section-title">Subscriptions</div>
+        {subscriptionsLoading ? (
+          <div className="sidebar-item">
+            <span className="sidebar-item-text">Loading...</span>
+          </div>
+        ) : (
+          subscriptions.map((subscription) => (
+            <Link
+              key={subscription._id}
+              to={`/channel/${getChannelHandle(subscription)}`}
+              className="sidebar-item subscription-item"
+            >
+              <div className="subscription-avatar">
+                <img 
+                  src={getAvatarUrl(subscription)} 
+                  alt={getChannelName(subscription)}
+                  onError={(e) => { e.target.src = '/images/user.jpg'; }}
+                />
+              </div>
+              {!isSidebarCollapsed && (
+                <span className="sidebar-item-text">{getChannelName(subscription)}</span>
+              )}
+            </Link>
+          ))
+        )}
+        {subscriptions.length >= 7 && !isSidebarCollapsed && (
+          <Link to="/subscriptions" className="sidebar-item show-more-item">
+            <div className="sidebar-item-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 14l5-5 5 5z" fill="#606060"/>
+              </svg>
+            </div>
+            <span className="sidebar-item-text">Show more</span>
+          </Link>
+        )}
+      </div>
+    );
+  };
+
+  const renderSection = (items, title = null) => {
+    if (!items || items.length === 0) return null;
+    
+    return (
+      <div className="sidebar-section">
+        {title && <div className="section-title">{title}</div>}
+        {items.map((item, index) => {
+          if (item.isMessage) {
+            return (
+              <div key={index} className="sidebar-item message-item" onClick={() => handleItemClick(item)}>
+                <div className="sidebar-item-content">
+                  <span className="sidebar-item-text">{item.label}</span>
+                  <button className="sign-in-btn">SIGN IN</button>
+                </div>
+              </div>
+            );
+          }
+          
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`sidebar-item ${location.pathname === item.path ? 'active' : ''}`}
+            >
+              <div className="sidebar-item-icon">{item.icon}</div>
+              {!isSidebarCollapsed && <span className="sidebar-item-text">{item.label}</span>}
+            </Link>
+          );
+        })}
+      </div>
+    );
+  };
+
+  if (isSidebarCollapsed) {
+    return (
+      <div className="sidebar collapsed">
+        <div className="sidebar-content">
+          {renderSection(mainItems)}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="sidebar">
-      <div className="sidebar-section">
-        {items.map((item, idx) => (
-          <div 
-            key={idx} 
-            className={`sidebar-item ${currentView === item.view ? 'active' : ''}`}
-            onClick={() => onNavigate(item.view)}
-          >
-            <div className="sidebar-icon">{item.icon}</div>
-            <span className="nav-text">{item.label}</span>
+      <div className="sidebar-content">
+        {renderSection(mainItems)}
+        {user && renderSection(youItems, 'You')}
+        {!user && renderSection(publicItems)}
+        {renderSubscriptions()}
+        {renderSection(exploreItems, 'Explore')}
+        <div className="sidebar-footer">
+          {renderSection(settingsItems)}
+          <div className="sidebar-footer-links">
+            <Link to="/about">About</Link>
+            <Link to="/press">Press</Link>
+            <Link to="/copyright">Copyright</Link>
+            <Link to="/contact">Contact</Link>
+            <Link to="/creators">Creators</Link>
+            <Link to="/advertise">Advertise</Link>
+            <Link to="/developers">Developers</Link>
           </div>
-        ))}
+          <div className="sidebar-footer-links">
+            <Link to="/terms">Terms</Link>
+            <Link to="/privacy">Privacy</Link>
+            <Link to="/policy-safety">Policy & Safety</Link>
+            <Link to="/how-youtube-works">How YouTube works</Link>
+            <Link to="/test-features">Test new features</Link>
+          </div>
+          <div className="sidebar-copyright">
+            © 2025 Google LLC
+          </div>
+        </div>
       </div>
     </div>
   );
 }
+
+export default Sidebar;
