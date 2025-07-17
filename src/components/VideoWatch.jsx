@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AddComment from './AddComment';
 import CommentsList from './CommentsList';
+import CustomVideoPlayer from './CustomVideoPlayer';
 import { useParams, useNavigate } from 'react-router-dom';
 import './VideoWatch.css';
 
@@ -41,6 +42,7 @@ export default function VideoWatch() {
   const [showDescription, setShowDescription] = useState(false);
   const [recommendedVideos, setRecommendedVideos] = useState([]);
   const [refreshCommentsFlag, setRefreshCommentsFlag] = useState(0);
+  const [isTheaterMode, setIsTheaterMode] = useState(false);
 
   // Function to refresh comment count when a comment is added
   const handleCommentAdded = async () => {
@@ -111,6 +113,30 @@ export default function VideoWatch() {
       }
     }
     updateViews();
+  }, [videoId, authToken]);
+
+  // Add to watch history
+  useEffect(() => {
+    async function addToWatchHistory() {
+      if (!authToken) return; // Only track for logged-in users
+      
+      try {
+        await fetch('http://localhost:5000/api/user/watch-history', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({
+            videoId: videoId,
+            watchProgress: 0 // Initially 0, could be updated based on video progress
+          })
+        });
+      } catch (err) {
+        console.error('Failed to add to watch history:', err);
+      }
+    }
+    addToWatchHistory();
   }, [videoId, authToken]);
 
   // Fetch recommended videos
@@ -223,9 +249,11 @@ export default function VideoWatch() {
     } catch (e) {}
   };
   const handleChannelClick = () => {
-    if (!video?.uploaderChannel?.name) return;
-    const channelName = video.uploaderChannel.name.toLowerCase().replace(/\s+/g, '-');
-    navigate(`/channel/${channelName}`);
+    if (!video?.uploaderChannel) return;
+    const handle = video.uploaderChannel.handle || video.uploader?.username;
+    if (handle) {
+      navigate(`/channel/${handle}`);
+    }
   };
   const handleHomeClick = () => navigate('/');
 
@@ -246,16 +274,15 @@ export default function VideoWatch() {
   }
 
   return (
-    <div className="video-watch-container">
+    <div className={`video-watch-container ${isTheaterMode ? 'theater-mode' : ''}`}>
       <div className="video-content">
         <div className="video-player-section">
           <div className="video-player">
-            <video
+            <CustomVideoPlayer
               src={`http://localhost:5000${video.videoUrl}`}
               poster={getThumbnailUrl(video.thumbnail)}
-              controls
-              width="100%"
-              style={{ borderRadius: 8, background: '#000' }}
+              title={video.title}
+              onTheaterMode={setIsTheaterMode}
             />
           </div>
           <div className="video-info-section">
@@ -388,7 +415,16 @@ export default function VideoWatch() {
                 </div>
                 <div className="rec-video-info">
                   <div className="rec-title">{v.title}</div>
-                  <div className="rec-author">{v.uploaderChannel?.name || 'Channel'}</div>
+                  <div 
+                    className="rec-author" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const handle = v.uploader?.channel?.handle || v.uploader?.username;
+                      if (handle) navigate(`/channel/${handle}`);
+                    }}
+                  >
+                    {v.uploader?.channel?.name || v.uploader?.username || 'Channel'}
+                  </div>
                   <div className="rec-meta">
                     {(v.views || 0).toLocaleString()} views • {formatDateAgo(v.createdAt)}
                   </div>

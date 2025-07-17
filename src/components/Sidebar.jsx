@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSidebar } from '../context/SidebarContext';
 import './Sidebar.css';
@@ -7,6 +7,42 @@ function Sidebar({ user }) {
   const { isSidebarCollapsed } = useSidebar();
   const location = useLocation();
   const navigate = useNavigate();
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [subscriptionsLoading, setSubscriptionsLoading] = useState(false);
+
+  // Fetch user's subscriptions when component mounts or user changes
+  useEffect(() => {
+    const fetchSubscriptions = async () => {
+      if (!user) {
+        setSubscriptions([]);
+        return;
+      }
+
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (!token) return;
+
+      setSubscriptionsLoading(true);
+      try {
+        const response = await fetch('http://localhost:5000/api/subscriptions/my-subscriptions', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          // Limit to 7 subscriptions for the sidebar
+          setSubscriptions(data.subscriptions.slice(0, 7));
+        }
+      } catch (error) {
+        console.error('Error fetching subscriptions:', error);
+      } finally {
+        setSubscriptionsLoading(false);
+      }
+    };
+
+    fetchSubscriptions();
+  }, [user]);
 
   // Main navigation items - available to all users
   const mainItems = [
@@ -87,7 +123,7 @@ function Sidebar({ user }) {
       label: 'Trending', 
       path: '/trending',
       icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M17.53 11.2c-.23-.3-.5-.56-.77-.82-.81-.79-1.98-1.44-3.47-1.44-.68 0-1.34.16-1.89.46l-.16.1c-.46.27-.8.67-.99 1.15-.19.48-.19 1.01.04 1.48.23.47.64.86 1.15 1.05l.21.08c.46.14.96.18 1.45.1.47-.08.93-.26 1.33-.52.4-.26.74-.62.99-1.05.25-.43.35-.92.27-1.4-.08-.48-.3-.91-.65-1.24z" fill="#606060"/>
+        <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6h-6z" fill="#606060"/>
       </svg>
     },
     { 
@@ -158,6 +194,80 @@ function Sidebar({ user }) {
     }
   };
 
+  // Helper function to get avatar URL for subscriptions
+  const getAvatarUrl = (subscription) => {
+    if (subscription.channel?.avatar) {
+      // If it starts with /uploads/, it's a local file
+      if (subscription.channel.avatar.startsWith('/uploads/')) {
+        return `http://localhost:5000${subscription.channel.avatar}`;
+      }
+      // Otherwise it's an external URL (like Picsum)
+      return subscription.channel.avatar;
+    }
+    if (subscription.profilePicture) {
+      if (subscription.profilePicture.startsWith('/uploads/')) {
+        return `http://localhost:5000${subscription.profilePicture}`;
+      }
+      return subscription.profilePicture;
+    }
+    return '/images/user.jpg';
+  };
+
+  // Helper function to get channel name for subscriptions
+  const getChannelName = (subscription) => {
+    return subscription.channel?.name || subscription.username || 'Unknown Channel';
+  };
+
+  // Helper function to get channel handle for navigation
+  const getChannelHandle = (subscription) => {
+    return subscription.channel?.handle || subscription.username;
+  };
+
+  // Render subscriptions section
+  const renderSubscriptions = () => {
+    if (!user || subscriptions.length === 0) return null;
+
+    return (
+      <div className="sidebar-section">
+        <div className="section-title">Subscriptions</div>
+        {subscriptionsLoading ? (
+          <div className="sidebar-item">
+            <span className="sidebar-item-text">Loading...</span>
+          </div>
+        ) : (
+          subscriptions.map((subscription) => (
+            <Link
+              key={subscription._id}
+              to={`/channel/${getChannelHandle(subscription)}`}
+              className="sidebar-item subscription-item"
+            >
+              <div className="subscription-avatar">
+                <img 
+                  src={getAvatarUrl(subscription)} 
+                  alt={getChannelName(subscription)}
+                  onError={(e) => { e.target.src = '/images/user.jpg'; }}
+                />
+              </div>
+              {!isSidebarCollapsed && (
+                <span className="sidebar-item-text">{getChannelName(subscription)}</span>
+              )}
+            </Link>
+          ))
+        )}
+        {subscriptions.length >= 7 && !isSidebarCollapsed && (
+          <Link to="/subscriptions" className="sidebar-item show-more-item">
+            <div className="sidebar-item-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 14l5-5 5 5z" fill="#606060"/>
+              </svg>
+            </div>
+            <span className="sidebar-item-text">Show more</span>
+          </Link>
+        )}
+      </div>
+    );
+  };
+
   const renderSection = (items, title = null) => {
     if (!items || items.length === 0) return null;
     
@@ -207,6 +317,7 @@ function Sidebar({ user }) {
         {renderSection(mainItems)}
         {user && renderSection(youItems, 'You')}
         {!user && renderSection(publicItems)}
+        {renderSubscriptions()}
         {renderSection(exploreItems, 'Explore')}
         <div className="sidebar-footer">
           {renderSection(settingsItems)}

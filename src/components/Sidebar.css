@@ -204,3 +204,41 @@
   color: #909090;
   font-size: 12px;
 }
+
+/* Subscription-specific styles */
+.subscription-item {
+  position: relative;
+}
+
+.subscription-item .subscription-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.subscription-item .subscription-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.show-more-item {
+  color: #606060;
+}
+
+.show-more-item:hover {
+  background-color: #f2f2f2;
+}
+
+/* Collapsed sidebar subscription adjustments */
+.sidebar.collapsed .subscription-item {
+  padding: 12px;
+  justify-content: center;
+}
+
+.sidebar.collapsed .subscription-item .subscription-avatar {
+  width: 32px;
+  height: 32px;
+}

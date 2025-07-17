@@ -270,10 +270,27 @@ export default function Channel({ onHomeClick, onChannelClick, onVideoClick, use
       <div className="channel-content">
         {activeTab === 'Home' && (
           <div className="channel-home">
-            {channelData.videos && channelData.videos.length > 0 ? (
-              <>
+            {/* Debug logging */}
+            {console.log('🔍 Channel Data:', channelData)}
+            {console.log('🌟 Featured Video:', channelData?.featuredVideo)}
+            {console.log('📹 All Videos:', channelData?.videos)}
+            
+            {/* Featured Video Section */}
+            {channelData.featuredVideo ? (
+              <div className="featured-section">
+                <h3>Featured Video</h3>
+                <div className="featured-video">
+                  <VideoCard 
+                    {...formatVideoData(channelData.featuredVideo)} 
+                    onChannelClick={onChannelClick} 
+                    onVideoClick={onVideoClick} 
+                  />
+                </div>
+              </div>
+            ) : (
+              channelData.videos && channelData.videos.length > 0 && (
                 <div className="featured-section">
-                  <h3>Featured Video</h3>
+                  <h3>Latest Video</h3>
                   <div className="featured-video">
                     <VideoCard 
                       {...formatVideoData(channelData.videos[0])} 
@@ -282,12 +299,21 @@ export default function Channel({ onHomeClick, onChannelClick, onVideoClick, use
                     />
                   </div>
                 </div>
+              )
+            )}
 
-                {channelData.videos.length > 1 && (
+            {/* Recent Videos Section */}
+            {channelData.videos && channelData.videos.length > 0 && (
+              (() => {
+                const filteredVideos = channelData.videos
+                  .filter(video => !channelData.featuredVideo || video._id !== channelData.featuredVideo._id)
+                  .slice(0, 4);
+                
+                return filteredVideos.length > 0 && (
                   <div className="for-you-section">
                     <h3>Recent Videos</h3>
                     <div className="video-grid">
-                      {channelData.videos.slice(1, 5).map((video, index) => (
+                      {filteredVideos.map((video, index) => (
                         <VideoCard 
                           key={video._id || index} 
                           {...formatVideoData(video)} 
@@ -297,9 +323,12 @@ export default function Channel({ onHomeClick, onChannelClick, onVideoClick, use
                       ))}
                     </div>
                   </div>
-                )}
-              </>
-            ) : (
+                );
+              })()
+            )}
+
+            {/* No content message */}
+            {(!channelData.videos || channelData.videos.length === 0) && !channelData.featuredVideo && (
               <div className="no-content">
                 <h3>No videos yet</h3>
                 <p>This channel hasn't uploaded any videos yet.</p>

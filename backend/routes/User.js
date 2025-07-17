@@ -180,6 +180,32 @@ router.get('/channel/:handle', async (req, res) => {
     .limit(50) // Limit to 50 most recent videos
     .select('-filePath'); // Don't expose file system paths
 
+    // Find the featured video
+    const featuredVideo = await Video.findOne({
+      uploader: user._id,
+      isFeatured: true,
+      visibility: { $in: ['public', 'unlisted'] }
+    }).select('-filePath');
+
+    console.log('🌟 Channel endpoint - Featured video query result:');
+    console.log('  - User ID:', user._id);
+    console.log('  - Featured video found:', !!featuredVideo);
+    if (featuredVideo) {
+      console.log('  - Featured video details:', {
+        id: featuredVideo._id,
+        title: featuredVideo.title,
+        isFeatured: featuredVideo.isFeatured,
+        visibility: featuredVideo.visibility
+      });
+    }
+
+    // Also check all videos by this user to see their featured status
+    const allUserVideos = await Video.find({ uploader: user._id }).select('title isFeatured visibility');
+    console.log('🔍 All videos by this user:');
+    allUserVideos.forEach(v => {
+      console.log(`  - ${v.title}: isFeatured=${v.isFeatured}, visibility=${v.visibility}`);
+    });
+
     // Update channel video count
     const updatedChannel = {
       ...user.channel,
@@ -192,7 +218,8 @@ router.get('/channel/:handle', async (req, res) => {
         id: user._id,
         channel: updatedChannel,
         username: user.username,
-        videos: videos
+        videos: videos,
+        featuredVideo: featuredVideo
       }
     });
   } catch (error) {

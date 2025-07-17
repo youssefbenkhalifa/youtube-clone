@@ -45,6 +45,10 @@ const VideoSchema = new mongoose.Schema(
       enum: ['private', 'unlisted', 'public'],
       default: 'private'
     },
+    isFeatured: {
+      type: Boolean,
+      default: false
+    },
     isForKids: {
       type: Boolean,
       default: false

@@ -50,6 +50,8 @@ export default function YouTubeStudio({ showUploadModal = false }) {
   const [uploadStep, setUploadStep] = useState('select'); // 'select', 'details', 'elements', 'checks', 'visibility'
   const [videoTitle, setVideoTitle] = useState('');
   const [videoDescription, setVideoDescription] = useState('');
+  const [videoVisibility, setVideoVisibility] = useState('private'); // Add visibility state
+  const [videoIsFeatured, setVideoIsFeatured] = useState(false); // Add featured state
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [videos, setVideos] = useState([]);
@@ -234,6 +236,14 @@ export default function YouTubeStudio({ showUploadModal = false }) {
 
   const handleUploadClose = () => {
     setIsUploadModalOpen(false);
+    // Reset form states
+    setVideoTitle('');
+    setVideoDescription('');
+    setVideoVisibility('private');
+    setVideoIsFeatured(false);
+    setSelectedThumbnail(null);
+    setUploadStep('select');
+    setSelectedFiles([]);
   };
 
   const handleUploadOpen = () => {
@@ -283,7 +293,8 @@ export default function YouTubeStudio({ showUploadModal = false }) {
       formData.append('video', file);
       formData.append('title', videoTitle);
       formData.append('description', videoDescription);
-      formData.append('visibility', 'private'); // Default to private
+      formData.append('visibility', videoVisibility); // Use selected visibility
+      formData.append('isFeatured', String(videoIsFeatured)); // Add featured status as string
       if (selectedThumbnail) {
         formData.append('thumbnail', selectedThumbnail);
       }
@@ -341,7 +352,8 @@ export default function YouTubeStudio({ showUploadModal = false }) {
         const formData = new FormData();
         formData.append('title', videoTitle);
         formData.append('description', videoDescription);
-        formData.append('visibility', 'public'); // Change to public when publishing
+        formData.append('visibility', videoVisibility); // Use selected visibility instead of forcing public
+        formData.append('isFeatured', String(videoIsFeatured)); // Add featured status as string
         
         if (selectedThumbnail) {
           formData.append('thumbnail', selectedThumbnail);
@@ -916,7 +928,7 @@ export default function YouTubeStudio({ showUploadModal = false }) {
                     </div>
                   )}
                 </div>
-              ) : (
+              ) : uploadStep === 'details' ? (
                 <div className="upload-details-container">
                   <div className="upload-details-left">
                     <div className="upload-section">
@@ -1048,7 +1060,143 @@ export default function YouTubeStudio({ showUploadModal = false }) {
                     </div>
                   </div>
                 </div>
-              )}
+              ) : uploadStep === 'visibility' ? (
+                <div className="upload-details-container">
+                  <div className="upload-details-left">
+                    <div className="upload-section">
+                      <div className="section-header">
+                        <h3>Visibility</h3>
+                      </div>
+                      
+                      <div className="form-group">
+                        <label>Choose when to publish and who can see your video</label>
+                        <div className="radio-group">
+                          <div className="radio-option">
+                            <input 
+                              type="radio" 
+                              id="private" 
+                              name="visibility" 
+                              value="private"
+                              checked={videoVisibility === 'private'}
+                              onChange={(e) => setVideoVisibility(e.target.value)}
+                            />
+                            <label htmlFor="private">
+                              <div className="visibility-option">
+                                <div className="visibility-icon">
+                                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM12 17c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM15.1 8H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" fill="#606060"/>
+                                  </svg>
+                                </div>
+                                <div className="visibility-content">
+                                  <div className="visibility-title">Private</div>
+                                  <div className="visibility-desc">Only you can see this video</div>
+                                </div>
+                              </div>
+                            </label>
+                          </div>
+                          <div className="radio-option">
+                            <input 
+                              type="radio" 
+                              id="unlisted" 
+                              name="visibility" 
+                              value="unlisted"
+                              checked={videoVisibility === 'unlisted'}
+                              onChange={(e) => setVideoVisibility(e.target.value)}
+                            />
+                            <label htmlFor="unlisted">
+                              <div className="visibility-option">
+                                <div className="visibility-icon">
+                                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1-1.39 3.1-3.1 3.1S3.9 13.71 3.9 12zM9 12c0-.83-.67-1.5-1.5-1.5S6 11.17 6 12s.67 1.5 1.5 1.5S9 12.83 9 12zm3-4.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zM12 12c0-.83-.67-1.5-1.5-1.5S9 11.17 9 12s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5zm7.1 0c0-1.71-1.39-3.1-3.1-3.1S12.9 10.29 12.9 12s1.39 3.1 3.1 3.1 3.1-1.39 3.1-3.1zM18 12c0-.83-.67-1.5-1.5-1.5S15 11.17 15 12s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5z" fill="#606060"/>
+                                  </svg>
+                                </div>
+                                <div className="visibility-content">
+                                  <div className="visibility-title">Unlisted</div>
+                                  <div className="visibility-desc">Anyone with the link can view</div>
+                                </div>
+                              </div>
+                            </label>
+                          </div>
+                          <div className="radio-option">
+                            <input 
+                              type="radio" 
+                              id="public" 
+                              name="visibility" 
+                              value="public"
+                              checked={videoVisibility === 'public'}
+                              onChange={(e) => setVideoVisibility(e.target.value)}
+                            />
+                            <label htmlFor="public">
+                              <div className="visibility-option">
+                                <div className="visibility-icon">
+                                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="#1976d2"/>
+                                  </svg>
+                                </div>
+                                <div className="visibility-content">
+                                  <div className="visibility-title">Public</div>
+                                  <div className="visibility-desc">Everyone can search for and view</div>
+                                </div>
+                              </div>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="featured-option">
+                      <label className="featured-checkbox-label">
+                        <input 
+                          type="checkbox" 
+                          checked={videoIsFeatured}
+                          onChange={(e) => setVideoIsFeatured(e.target.checked)}
+                          className="featured-checkbox"
+                        />
+                        <span className="checkmark"></span>
+                        <div className="featured-text">
+                          <div className="featured-title">Mark as Featured Video</div>
+                          <div className="featured-desc">Featured videos are highlighted on your channel homepage</div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="upload-details-right">
+                    <div className="upload-status">
+                      <div className="upload-progress-container">
+                        <div className="upload-visual">
+                          {isUploading ? (
+                            <>
+                              <div className="upload-spinner"></div>
+                              <p>Processing video...</p>
+                            </>
+                          ) : (
+                            <p>Setting visibility...</p>
+                          )}
+                        </div>
+                        
+                        <div className="video-info">
+                          <div className="info-row">
+                            <span>Video link</span>
+                            <div className="video-link">
+                              <span>https://youtu.be/CsVo-MfcR70</span>
+                              <button className="copy-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                  <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" fill="#606060"/>
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                          <div className="info-row">
+                            <span>Filename</span>
+                            <span>{selectedFiles[0]?.name}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
               
               {uploadStep === 'select' && (
                 <div className="upload-modal-footer">

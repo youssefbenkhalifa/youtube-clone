@@ -25,6 +25,8 @@ export default function VideoEdit() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   
@@ -32,6 +34,7 @@ export default function VideoEdit() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [visibility, setVisibility] = useState('unlisted');
+  const [isFeatured, setIsFeatured] = useState(false);
   const [selectedThumbnail, setSelectedThumbnail] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState('');
   
@@ -58,8 +61,17 @@ export default function VideoEdit() {
           setTitle(data.data.title);
           setDescription(data.data.description || '');
           setVisibility(data.data.visibility || 'unlisted');
+          
+          // Handle isFeatured more robustly
+          const featuredStatus = Boolean(data.data.isFeatured);
+          setIsFeatured(featuredStatus);
           setThumbnailPreview(getThumbnailUrl(data.data.thumbnail));
+          
           console.log('✅ Video data loaded successfully');
+          console.log('🌟 Raw isFeatured from backend:', data.data.isFeatured);
+          console.log('🌟 isFeatured type:', typeof data.data.isFeatured);
+          console.log('🌟 Converted to boolean:', featuredStatus);
+          console.log('🌟 Setting local isFeatured state to:', featuredStatus);
         } else {
           console.error('❌ Failed to fetch video:', data.message);
           setError(data.message || 'Failed to fetch video');
@@ -77,6 +89,11 @@ export default function VideoEdit() {
     }
   }, [videoId]);
 
+  // Debug effect to track isFeatured state changes
+  useEffect(() => {
+    console.log('🔄 isFeatured state changed to:', isFeatured);
+  }, [isFeatured]);
+
   const initiateHandleSave = () => {
     setShowConfirmDialog(true);
   };
@@ -86,7 +103,7 @@ export default function VideoEdit() {
     setSaving(true);
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      console.log('🔧 Starting save process...', { videoId, title, description, visibility });
+      console.log('🔧 Starting save process...', { videoId, title, description, visibility, isFeatured });
       console.log('🔑 Token available:', !!token);
       
       const formData = new FormData();
@@ -94,6 +111,13 @@ export default function VideoEdit() {
       formData.append('title', title);
       formData.append('description', description);
       formData.append('visibility', visibility);
+      formData.append('isFeatured', String(isFeatured)); // Explicitly convert to string
+      
+      console.log('📋 FormData being sent:');
+      console.log('  - title:', title);
+      console.log('  - description:', description);
+      console.log('  - visibility:', visibility);
+      console.log('  - isFeatured:', isFeatured, '(converted to string:', String(isFeatured), ')');
       
       if (selectedThumbnail) {
         formData.append('thumbnail', selectedThumbnail);
@@ -125,17 +149,23 @@ export default function VideoEdit() {
           }
         }, 3000);
         
+        console.log('🔍 Response data after save:', data);
+        console.log('🔍 Response data.data:', data.data);
+        console.log('🔍 Response data.data.isFeatured:', data.data.isFeatured);
+        
         setVideo(prev => ({ 
           ...prev, 
           title, 
           description, 
           visibility,
+          isFeatured,
           thumbnail: data.data.thumbnail || prev.thumbnail
         }));
         if (data.data.thumbnail) {
           setThumbnailPreview(getThumbnailUrl(data.data.thumbnail));
         }
-        console.log('✅ Save successful');
+        console.log('✅ Save successful - Local state updated');
+        console.log('🔍 Local isFeatured state is now:', isFeatured);
       } else {
         console.error('❌ Save failed:', data);
         const errorToast = document.createElement('div');
@@ -157,6 +187,73 @@ export default function VideoEdit() {
       }, 5000);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Delete video function
+  const handleDeleteVideo = async () => {
+    if (!video) return;
+    
+    setDeleting(true);
+    setShowDeleteDialog(false);
+    
+    try {
+      console.log('🗑️ Deleting video with ID:', videoId);
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      
+      const response = await fetch(`http://localhost:5000/api/videos/${videoId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      console.log('🗑️ Delete response:', data);
+      
+      if (data.success) {
+        // Show success toast
+        const successToast = document.createElement('div');
+        successToast.className = 'toast success-toast';
+        successToast.textContent = 'Video deleted successfully';
+        document.body.appendChild(successToast);
+        setTimeout(() => {
+          if (document.body.contains(successToast)) {
+            document.body.removeChild(successToast);
+          }
+        }, 3000);
+        
+        // Navigate back to studio after short delay
+        setTimeout(() => {
+          navigate('/studio');
+        }, 1500);
+        
+        console.log('✅ Delete successful');
+      } else {
+        console.error('❌ Delete failed:', data);
+        const errorToast = document.createElement('div');
+        errorToast.className = 'toast error-toast';
+        errorToast.textContent = 'Failed to delete video: ' + (data.message || 'Unknown error');
+        document.body.appendChild(errorToast);
+        setTimeout(() => {
+          if (document.body.contains(errorToast)) {
+            document.body.removeChild(errorToast);
+          }
+        }, 5000);
+      }
+    } catch (err) {
+      console.error('🚨 Error in delete process:', err);
+      const errorToast = document.createElement('div');
+      errorToast.className = 'toast error-toast';
+      errorToast.textContent = 'Failed to delete video: ' + err.message;
+      document.body.appendChild(errorToast);
+      setTimeout(() => {
+        if (document.body.contains(errorToast)) {
+          document.body.removeChild(errorToast);
+        }
+      }, 5000);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -234,6 +331,24 @@ export default function VideoEdit() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteDialog && (
+        <div className="confirm-dialog-overlay">
+          <div className="confirm-dialog delete-dialog">
+            <h3>Delete video?</h3>
+            <p>Are you sure you want to delete this video? This action cannot be undone.</p>
+            <div className="dialog-buttons">
+              <button className="dialog-btn-cancel" onClick={() => setShowDeleteDialog(false)}>
+                Cancel
+              </button>
+              <button className="dialog-btn-confirm" onClick={handleDeleteVideo}>
+                {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Header */}
       <div className="video-edit-header">
@@ -249,9 +364,13 @@ export default function VideoEdit() {
           <h1>Video details</h1>
         </div>
         <div className="header-right">
-          <button className="undo-btn" disabled>
-            Undo changes
+          <button className="delete-btn"
+          onClick={() => setShowDeleteDialog(true)}
+          disabled={deleting}
+          >
+            {deleting ? 'Deleting...' : 'Delete Video'}
           </button>
+
           <button 
             className="save-btn" 
             onClick={initiateHandleSave}
@@ -279,7 +398,7 @@ export default function VideoEdit() {
                 className="video-thumbnail"
               />
               <div className="video-duration">
-                {video.duration || '11:12'}
+                {video.duration || '00:00'}
               </div>
             </div>
             <div className="video-details">
@@ -393,7 +512,7 @@ export default function VideoEdit() {
                       <button className="link-btn">Learn more</button>
                     </p>
                     
-                    <div className="thumbnail-container">
+                    <div className="thumbnail-c">
                       <div className="thumbnail-preview">
                         <img 
                           src={thumbnailPreview} 
@@ -414,7 +533,7 @@ export default function VideoEdit() {
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                               <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z" fill="currentColor"/>
                             </svg>
-                            Upload file
+                            <p>Upload file</p>
                           </label>
                         </div>
                         
@@ -566,6 +685,22 @@ export default function VideoEdit() {
                     </div>
                   </div>
 
+                  <div className="featured-section">
+                    <label className="featured-label">
+                      <input 
+                        type="checkbox" 
+                        checked={isFeatured}
+                        onChange={(e) => setIsFeatured(e.target.checked)}
+                        className="featured-checkbox"
+                      />
+                      <span className="checkmark"></span>
+                      <div className="featured-text">
+                        <h3>Mark as Featured Video</h3>
+                        <p>Featured videos are highlighted on your channel homepage. Only one video can be featured at a time.</p>
+                      </div>
+                    </label>
+                  </div>
+
                   <div className="restrictions-section">
                     <label>Restrictions</label>
                     <div className="restriction-item">
@@ -614,13 +749,16 @@ export default function VideoEdit() {
                 
                 {/* Save Changes Button at Bottom */}
                 <div className="bottom-save-section">
-                  <button 
-                    className="bottom-save-btn" 
-                    onClick={initiateHandleSave}
-                    disabled={saving}
-                  >
-                    {saving ? 'Saving Changes...' : 'Save Changes'}
-                  </button>
+                  <div className="bottom-actions">
+
+                    <button 
+                      className="bottom-save-btn" 
+                      onClick={initiateHandleSave}
+                      disabled={saving}
+                    >
+                      {saving ? 'Saving Changes...' : 'Save Changes'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

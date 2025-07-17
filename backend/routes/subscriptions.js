@@ -292,4 +292,79 @@ router.get('/subscribers/:userId', auth, async (req, res) => {
   }
 });
 
+// Get videos from subscribed channels
+// @route   GET /api/subscriptions/feed
+// @access  Private
+router.get('/feed', auth, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    // Get user's subscriptions
+    const user = await User.findById(req.user.id).populate('subscriptions');
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    if (user.subscriptions.length === 0) {
+      return res.json({
+        success: true,
+        data: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          pages: 0
+        }
+      });
+    }
+
+    // Get the IDs of subscribed channels
+    const subscribedChannelIds = user.subscriptions.map(sub => sub._id);
+
+    // Get videos from subscribed channels
+    const Video = require('../models/Video');
+    
+    const videos = await Video.find({
+      uploader: { $in: subscribedChannelIds },
+      visibility: 'public',
+      processingStatus: 'ready'
+    })
+    .populate('uploader', 'username channel')
+    .sort({ createdAt: -1 }) // Sort by newest first
+    .skip(skip)
+    .limit(limit)
+    .select('-filePath');
+
+    const total = await Video.countDocuments({
+      uploader: { $in: subscribedChannelIds },
+      visibility: 'public',
+      processingStatus: 'ready'
+    });
+
+    res.json({
+      success: true,
+      data: videos,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+
+  } catch (error) {
+    console.error('Error getting subscription feed:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while getting subscription feed'
+    });
+  }
+});
+
 module.exports = router;

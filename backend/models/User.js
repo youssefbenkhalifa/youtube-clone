@@ -96,6 +96,22 @@ const UserSchema = new mongoose.Schema(
     subscribers: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User'
+    }],
+    // Watch history tracking
+    watchHistory: [{
+      video: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Video',
+        required: true
+      },
+      watchedAt: {
+        type: Date,
+        default: Date.now
+      },
+      watchProgress: {
+        type: Number, // percentage watched (0-100)
+        default: 0
+      }
     }]
   },
   { timestamps: true }

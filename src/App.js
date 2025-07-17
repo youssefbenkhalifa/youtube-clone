@@ -35,6 +35,7 @@ function MainAppContent({ user, setUser }) {
           <Route path="/subscriptions" element={<Subscriptions />} />
           <Route path="/library" element={<Library />} />
           <Route path="/history" element={<History />} />
+          <Route path="/channel/:handle" element={<Channel user={user} />} />
           <Route path="/watch/:videoId" element={<VideoWatch />} />
           
           {/* User Routes */}
@@ -165,11 +166,6 @@ export default function App() {
             <Route path="/channel" element={
               <ProtectedRoute user={user}>
                 <Navigate to={`/channel/${user?.channel?.handle || user?.username}`} replace />
-              </ProtectedRoute>
-            } />
-            <Route path="/channel/:handle" element={
-              <ProtectedRoute user={user}>
-                <Channel user={user} />
               </ProtectedRoute>
             } />
             

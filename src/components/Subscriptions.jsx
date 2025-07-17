@@ -1,26 +1,59 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import VideoCard from './VideoCard';
+
+// Format video data for VideoCard component
+const formatVideoData = (video) => {
+  const timeAgo = (date) => {
+    const now = new Date();
+    const videoDate = new Date(date);
+    const diffInSeconds = Math.floor((now - videoDate) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    if (diffInSeconds < 2629746) return `${Math.floor(diffInSeconds / 604800)} weeks ago`;
+    if (diffInSeconds < 31556952) return `${Math.floor(diffInSeconds / 2629746)} months ago`;
+    return `${Math.floor(diffInSeconds / 31556952)} years ago`;
+  };
+
+  return {
+    id: video._id,
+    _id: video._id,
+    title: video.title,
+    author: video.uploader?.channel?.name || video.uploader?.username || 'Unknown Channel',
+    uploader: video.uploader,
+    views: `${video.views?.toLocaleString() || 0} views`,
+    date: timeAgo(video.createdAt),
+    thumbnail: video.thumbnail || '/images/thumbnail.jpg',
+    duration: video.duration || '0:00',
+    verified: false
+  };
+};
 
 export default function Subscriptions() {
   const navigate = useNavigate();
-  const [subscriptions, setSubscriptions] = useState([]);
+  const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  useEffect(() => {
-    fetchSubscriptions();
-  }, []);
-
-  const fetchSubscriptions = async () => {
+  const fetchSubscriptionFeed = useCallback(async (pageNum = 1, append = false) => {
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       if (!token) {
-        setError('Please log in to view your subscriptions');
+        setError('Please log in to view your subscription feed');
         setLoading(false);
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/subscriptions/my-subscriptions', {
+      if (pageNum === 1) setLoading(true);
+      else setLoadingMore(true);
+
+      const response = await fetch(`http://localhost:5000/api/subscriptions/feed?page=${pageNum}&limit=20`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -28,38 +61,53 @@ export default function Subscriptions() {
 
       const data = await response.json();
       if (data.success) {
-        setSubscriptions(data.subscriptions);
+        const formattedVideos = data.data.map(video => formatVideoData(video));
+        
+        if (append) {
+          setVideos(prev => [...prev, ...formattedVideos]);
+        } else {
+          setVideos(formattedVideos);
+        }
+        
+        setHasMore(data.pagination.page < data.pagination.pages);
+        setPage(pageNum);
       } else {
-        setError(data.message || 'Failed to fetch subscriptions');
+        setError(data.message || 'Failed to fetch subscription feed');
       }
     } catch (err) {
-      console.error('Error fetching subscriptions:', err);
-      setError('Failed to load subscriptions');
+      console.error('Error fetching subscription feed:', err);
+      setError('Failed to load subscription feed');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  };
+  }, []);
 
-  const handleChannelClick = (channel) => {
-    const handle = channel.channel?.handle?.replace('@', '') || channel.username;
+  useEffect(() => {
+    fetchSubscriptionFeed();
+  }, [fetchSubscriptionFeed]);
+
+  const handleChannelClick = (uploader) => {
+    if (!uploader) return;
+    const handle = uploader.channel?.handle?.replace('@', '') || uploader.username;
     navigate(`/channel/${handle}`);
   };
 
-  const getAvatarUrl = (channel) => {
-    const avatar = channel.channel?.avatar || channel.profilePicture;
-    if (!avatar) return '/images/user.jpg';
-    if (avatar.startsWith('/uploads/')) {
-      return `http://localhost:5000${avatar}`;
-    }
-    return avatar;
+  const handleVideoClick = (video) => {
+    navigate(`/watch/${video._id}`);
   };
 
+  const loadMoreVideos = () => {
+    if (!loadingMore && hasMore) {
+      fetchSubscriptionFeed(page + 1, true);
+    }
+  };
   if (loading) {
     return (
       <div className="subscriptions-page" style={{ padding: '40px', textAlign: 'center' }}>
         <div className="loading-state">
           <div className="loading-spinner"></div>
-          <p>Loading subscriptions...</p>
+          <p>Loading your subscription feed...</p>
         </div>
       </div>
     );
@@ -69,10 +117,23 @@ export default function Subscriptions() {
     return (
       <div className="subscriptions-page" style={{ padding: '40px', textAlign: 'center' }}>
         <div className="error-state">
-          <h2>Unable to load subscriptions</h2>
+          <h2>Unable to load subscription feed</h2>
           <p>{error}</p>
           {!localStorage.getItem('token') && !sessionStorage.getItem('token') && (
-            <button onClick={() => navigate('/login')}>Log In</button>
+            <button 
+              onClick={() => navigate('/login')}
+              style={{
+                background: '#ff0000',
+                color: 'white',
+                border: 'none',
+                padding: '10px 20px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                marginTop: '16px'
+              }}
+            >
+              Log In
+            </button>
           )}
         </div>
       </div>
@@ -81,13 +142,13 @@ export default function Subscriptions() {
 
   return (
     <div className="subscriptions-page" style={{ padding: '40px' }}>
-      <h1>Your Subscriptions</h1>
+      <h1>Subscriptions</h1>
       
-      {subscriptions.length === 0 ? (
-        <div className="no-subscriptions" style={{ textAlign: 'center', marginTop: '40px' }}>
-          <h2>No subscriptions yet</h2>
+      {videos.length === 0 ? (
+        <div className="no-videos" style={{ textAlign: 'center', marginTop: '40px' }}>
+          <h2>No videos from your subscriptions</h2>
           <p style={{ color: '#606060', marginBottom: '20px' }}>
-            When you subscribe to channels, they'll appear here.
+            Videos from channels you subscribe to will appear here.
           </p>
           <button 
             onClick={() => navigate('/')}
@@ -104,52 +165,43 @@ export default function Subscriptions() {
           </button>
         </div>
       ) : (
-        <div className="subscriptions-grid" style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-          gap: '20px',
-          marginTop: '20px'
-        }}>
-          {subscriptions.map((channel) => (
-            <div 
-              key={channel._id} 
-              className="subscription-card"
-              onClick={() => handleChannelClick(channel)}
-              style={{ 
-                cursor: 'pointer',
-                border: '1px solid #e0e0e0',
-                borderRadius: '8px',
-                padding: '16px',
-                textAlign: 'center',
-                transition: 'box-shadow 0.2s ease',
-                ':hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }
-              }}
-            >
-              <img 
-                src={getAvatarUrl(channel)}
-                alt={channel.channel?.name || channel.username}
-                style={{
-                  width: '60px',
-                  height: '60px',
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                  marginBottom: '12px'
-                }}
+        <>
+          <div className="videos-grid" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+            gap: '20px',
+            marginTop: '20px'
+          }}>
+            {videos.map((video) => (
+              <VideoCard 
+                key={video._id}
+                {...video}
+                onChannelClick={handleChannelClick}
+                onVideoClick={handleVideoClick}
               />
-              <div className="subscription-info">
-                <h3 style={{ margin: '0 0 4px 0', fontSize: '16px' }}>
-                  {channel.channel?.name || channel.username}
-                </h3>
-                <p style={{ margin: '0 0 4px 0', color: '#606060', fontSize: '14px' }}>
-                  {channel.channel?.handle || `@${channel.username}`}
-                </p>
-                <p style={{ margin: '0', color: '#606060', fontSize: '12px' }}>
-                  {(channel.channel?.subscriberCount || 0).toLocaleString()} subscribers
-                </p>
-              </div>
+            ))}
+          </div>
+          
+          {hasMore && (
+            <div style={{ textAlign: 'center', marginTop: '40px' }}>
+              <button
+                onClick={loadMoreVideos}
+                disabled={loadingMore}
+                style={{
+                  background: loadingMore ? '#ccc' : '#ff0000',
+                  color: 'white',
+                  border: 'none',
+                  padding: '12px 24px',
+                  borderRadius: '4px',
+                  cursor: loadingMore ? 'not-allowed' : 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                {loadingMore ? 'Loading...' : 'Load More Videos'}
+              </button>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );
