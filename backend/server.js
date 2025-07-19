@@ -19,12 +19,17 @@
   const videoRoutes = require('./routes/videos');
   const subscriptionRoutes = require('./routes/subscriptions');
   const watchHistoryRoutes = require('./routes/watchHistory');
+  const analyticsRoutes = require('./routes/analytics');
+  const playlistRoutes = require('./routes/playlists');
+
 
   app.use('/api/auth', authRoutes);
   app.use('/api/user', userRoutes);
   app.use('/api/videos', videoRoutes);
   app.use('/api/subscriptions', subscriptionRoutes);
   app.use('/api/user', watchHistoryRoutes);
+  app.use('/api/analytics', analyticsRoutes);
+  app.use('/api/playlists', playlistRoutes);
 
   // MongoDB Connection
   mongoose.connect(process.env.MONGO_URI, {
@@ -39,3 +44,4 @@
   app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
   });
+
