@@ -3,6 +3,24 @@ import { useParams } from 'react-router-dom';
 import './Channel.css';
 import VideoCard from './VideoCard';
 
+// Helper function to get proper thumbnail URL
+function getThumbnailUrl(thumbnail) {
+  if (!thumbnail) return '/images/thumbnail.jpg';
+  if (thumbnail.startsWith('/uploads/')) {
+    return `http://localhost:5000${thumbnail}`;
+  }
+  return thumbnail;
+}
+
+// Helper function to get proper banner URL
+function getBannerUrl(banner) {
+  if (!banner) return '/images/thumbnail.jpg';
+  if (banner.startsWith('/uploads/')) {
+    return `http://localhost:5000${banner}`;
+  }
+  return banner;
+}
+
 const tabs = ['Home', 'Videos', 'Shorts', 'Live', 'Podcasts', 'Playlists', 'Posts'];
 
 export default function Channel({ onHomeClick, onChannelClick, onVideoClick, user }) {
@@ -50,10 +68,7 @@ export default function Channel({ onHomeClick, onChannelClick, onVideoClick, use
       },
       views: `${video.views?.toLocaleString() || 0} views`,
       date: timeAgo(video.createdAt),
-      // uncomment the below line after testing
-      //       thumbnail: video.thumbnail ? `http://localhost:5000${video.thumbnail}` : '/images/thumbnail.jpg',
-
-      thumbnail: video.thumbnail ? `${video.thumbnail}` : '/images/thumbnail.jpg',
+      thumbnail: getThumbnailUrl(video.thumbnail),
       duration: video.duration || '0:00',
       verified: false // TODO: Implement verification system
     };
@@ -220,7 +235,7 @@ export default function Channel({ onHomeClick, onChannelClick, onVideoClick, use
     <div className="channel-page">
       <div className="channel-header">
         <img 
-          src={channelData.channel?.banner || '/images/thumbnail.jpg'} 
+          src={getBannerUrl(channelData.channel?.banner)} 
           alt="Channel cover" 
           className="cover-image" 
         />
@@ -233,7 +248,7 @@ export default function Channel({ onHomeClick, onChannelClick, onVideoClick, use
           />
           
           <div className="channel-text">
-            <h2>{channelData.channel?.handle || channelData.username}</h2>
+            <h2>{channelData.channel?.name || channelData.username}</h2>
             <div className="channel-meta">
               <span className="channel-handle">{channelData.channel?.handle || `@${channelData.username}`}</span>
               <span>  {subscriberCount.toLocaleString()} subscribers</span>

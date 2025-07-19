@@ -1,9 +1,18 @@
 import React, { useState } from 'react';
 
-export default function AddComment({ videoId, onCommentAdded }) {
+export default function AddComment({ videoId, onCommentAdded, user }) {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const getAvatarUrl = (user) => {
+    const avatar = user?.channel?.avatar || user?.profilePicture;
+    if (!avatar) return '/images/user.jpg';
+    if (avatar.startsWith('/uploads/')) {
+      return `http://localhost:5000${avatar}`;
+    }
+    return avatar;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,7 +45,7 @@ export default function AddComment({ videoId, onCommentAdded }) {
 
   return (
     <form className="add-comment" onSubmit={handleSubmit}>
-      <img src="/images/user.jpg" alt="You" className="comment-avatar" />
+      <img src={getAvatarUrl(user)} alt="You" className="comment-avatar" />
       <input
         type="text"
         placeholder="Add a comment..."

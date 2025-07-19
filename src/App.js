@@ -13,6 +13,8 @@ import Library from './components/Library';
 import History from './components/History';
 import WatchLater from './components/WatchLater';
 import LikedVideos from './components/LikedVideos';
+import Playlists from './components/Playlists';
+import Playlist from './components/Playlist';
 import Login from './components/login';
 import Signup from './components/signup';
 import EditProfile from './components/EditProfile';
@@ -36,10 +38,12 @@ function MainAppContent({ user, setUser }) {
           <Route path="/library" element={<Library />} />
           <Route path="/history" element={<History />} />
           <Route path="/channel/:handle" element={<Channel user={user} />} />
-          <Route path="/watch/:videoId" element={<VideoWatch />} />
+          <Route path="/watch/:videoId" element={<VideoWatch user={user} />} />
           
           {/* User Routes */}
-          <Route path="/playlist/watch-later" element={<WatchLater />} />
+          <Route path="/playlists" element={<Playlists user={user} />} />
+          <Route path="/playlist/:playlistId" element={<Playlist user={user} />} />
+          <Route path="/playlist/watch-later" element={<WatchLater user={user} />} />
           <Route path="/playlist/liked-videos" element={<LikedVideos />} />
           
           {/* Catch all - redirect to home */}
