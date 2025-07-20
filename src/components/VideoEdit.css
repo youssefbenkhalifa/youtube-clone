@@ -317,15 +317,15 @@ textarea {
 
 /* Thumbnail Section */
 .thumbnail-c {
-  width: 40%;
-  height: 40%;
+  width: 100%;
+  max-width: 400px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   margin: 0 auto;
 }
 label.upload-btn{
-  height: 80%;
+  height: auto;
 }
 
 .thumbnail-preview {

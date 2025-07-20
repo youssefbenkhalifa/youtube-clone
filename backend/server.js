@@ -19,29 +19,33 @@
   const videoRoutes = require('./routes/videos');
   const subscriptionRoutes = require('./routes/subscriptions');
   const watchHistoryRoutes = require('./routes/watchHistory');
-  const analyticsRoutes = require('./routes/analytics');
   const playlistRoutes = require('./routes/playlists');
-
+  const analyticsRoutes = require('./routes/analytics');
+  const adminRoutes = require('./routes/admin');
 
   app.use('/api/auth', authRoutes);
   app.use('/api/user', userRoutes);
   app.use('/api/videos', videoRoutes);
   app.use('/api/subscriptions', subscriptionRoutes);
   app.use('/api/user', watchHistoryRoutes);
-  app.use('/api/analytics', analyticsRoutes);
   app.use('/api/playlists', playlistRoutes);
+  app.use('/api/analytics', analyticsRoutes);
+  app.use('/api/admin', adminRoutes);
 
-  // MongoDB Connection
-  mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log('✅ MongoDB connected'))
-  .catch(err => console.error('❌ DB connection error:', err));
+// MongoDB Connection
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('✅ MongoDB connected'))
+.catch(err => {
+  console.error('❌ DB connection error:', err.message);
+  console.log('⚠️  Server will continue without database connection');
+});
 
-  // Start server
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-  });
-
+// Start server
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📊 Database status: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'}`);
+});

@@ -1,0 +1,152 @@
+.watch-later-container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.watch-later-header {
+  margin-bottom: 32px;
+  border-bottom: 1px solid #e5e5e5;
+  padding-bottom: 16px;
+}
+
+.watch-later-header h1 {
+  font-size: 32px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: #030303;
+}
+
+.watch-later-header p {
+  font-size: 16px;
+  color: #606060;
+  margin: 0;
+}
+
+.not-logged-in,
+.loading,
+.error,
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.not-logged-in h2,
+.error h2 {
+  font-size: 24px;
+  margin-bottom: 16px;
+  color: #030303;
+}
+
+.not-logged-in p,
+.error p {
+  font-size: 16px;
+  color: #606060;
+}
+
+.loading {
+  font-size: 18px;
+  color: #606060;
+}
+
+.empty-state {
+  padding: 120px 20px;
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 24px;
+}
+
+.empty-state h2 {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #030303;
+}
+
+.empty-state p {
+  font-size: 16px;
+  color: #606060;
+}
+
+.watch-later-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.watch-later-video-wrapper {
+  position: relative;
+}
+
+.remove-from-watch-later-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s, background-color 0.2s;
+  z-index: 10;
+}
+
+.watch-later-video-wrapper:hover .remove-from-watch-later-btn {
+  opacity: 1;
+}
+
+.remove-from-watch-later-btn:hover {
+  background: rgba(255, 0, 0, 0.9);
+}
+
+.added-date-overlay {
+  position: absolute;
+  bottom: 70px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.watch-later-video-wrapper:hover .added-date-overlay {
+  opacity: 1;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .watch-later-container {
+    padding: 16px;
+  }
+  
+  .watch-later-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .watch-later-header h1 {
+    font-size: 24px;
+  }
+  
+  .empty-state {
+    padding: 80px 20px;
+  }
+  
+  .empty-icon {
+    font-size: 48px;
+  }
+}

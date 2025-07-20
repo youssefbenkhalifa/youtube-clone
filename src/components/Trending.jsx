@@ -1,130 +1,154 @@
 import React, { useState, useEffect } from 'react';
 import VideoCard from './VideoCard';
 import './VideoGrid.css'; // Reuse the video grid styles
-import './Trending.css'; // Custom trending styles
+import './Trending.css'; // Trending-specific styles
 
-// Helper function to format video data for VideoCard component
-function formatVideoData(video) {
-  if (!video) return {};
-  
-  return {
-    id: video._id,
-    title: video.title || 'Untitled Video',
-    author: video.uploader?.channel?.name || video.uploader?.username || 'Unknown Channel',
-    authorHandle: video.uploader?.channel?.handle || video.uploader?.username || '',
-    views: `${video.views?.toLocaleString() || 0} views`,
-    date: formatTimeAgo(video.createdAt),
-    thumbnail: video.thumbnail ? `http://localhost:5000${video.thumbnail}` : '/images/thumbnail.jpg',
-    duration: video.duration || '0:00',
-    videoPath: video.videoUrl || '',
-    authorAvatar: video.uploader?.channel?.avatar ? `http://localhost:5000${video.uploader.channel.avatar}` : '/images/user.jpg',
-    uploader: video.uploader
-  };
+// Helper to format view count
+function formatViews(views) {
+  if (views >= 1000000) {
+    return `${(views / 1000000).toFixed(1)}M views`;
+  }
+  if (views >= 1000) {
+    return `${(views / 1000).toFixed(1)}K views`;
+  }
+  return `${views} views`;
 }
 
-// Helper function to format time ago
-function formatTimeAgo(dateString) {
-  if (!dateString) return 'Unknown date';
-  
+// Helper to format date
+function formatDate(dateString) {
   const date = new Date(dateString);
   const now = new Date();
-  const diffInSeconds = Math.floor((now - date) / 1000);
+  const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
   
-  if (diffInSeconds < 60) return 'Just now';
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
-  if (diffInSeconds < 2629746) return `${Math.floor(diffInSeconds / 604800)} weeks ago`;
-  if (diffInSeconds < 31556952) return `${Math.floor(diffInSeconds / 2629746)} months ago`;
-  return `${Math.floor(diffInSeconds / 31556952)} years ago`;
+  if (diffInHours < 1) {
+    return 'Just now';
+  }
+  if (diffInHours < 24) {
+    return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+  }
+  
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 30) {
+    return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+  }
+  
+  const diffInMonths = Math.floor(diffInDays / 30);
+  if (diffInMonths < 12) {
+    return `${diffInMonths} month${diffInMonths > 1 ? 's' : ''} ago`;
+  }
+  
+  const diffInYears = Math.floor(diffInMonths / 12);
+  return `${diffInYears} year${diffInYears > 1 ? 's' : ''} ago`;
+}
+
+// Helper to get thumbnail URL
+function getThumbnailUrl(thumbnail) {
+  if (!thumbnail) return '/images/thumbnail.jpg';
+  if (thumbnail.startsWith('http')) return thumbnail;
+  return `http://localhost:5000${thumbnail}`;
 }
 
 export default function Trending({ onChannelClick, onVideoClick }) {
-  const [videos, setVideos] = useState([]);
+  const [trendingVideos, setTrendingVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [totalVideos, setTotalVideos] = useState(0);
+  const [timeframe, setTimeframe] = useState('all');
+  const [category, setCategory] = useState('all');
 
   // Fetch trending videos
-  const fetchTrendingVideos = async (pageNum = 1, append = false) => {
-    try {
-      if (pageNum === 1) setLoading(true);
-      else setLoadingMore(true);
-
-      console.log(`🔥 Fetching trending videos - page ${pageNum}...`);
-      
-      const response = await fetch(`http://localhost:5000/api/videos/trending?page=${pageNum}&limit=20`);
-      const data = await response.json();
-      
-      console.log('📊 Trending videos response:', data);
-
-      if (data.success) {
-        const formattedVideos = data.data.map(formatVideoData);
+  useEffect(() => {
+    const fetchTrendingVideos = async () => {
+      try {
+        setLoading(true);
+        console.log('📈 Fetching trending videos...');
         
-        if (append) {
-          setVideos(prev => [...prev, ...formattedVideos]);
-        } else {
-          setVideos(formattedVideos);
+        const params = new URLSearchParams({
+          timeframe,
+          category,
+          limit: '24'
+        });
+        
+        const response = await fetch(`http://localhost:5000/api/videos/trending?${params}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        setHasMore(pageNum < data.pagination.pages);
-        setTotalVideos(data.pagination.total);
-        setError(null);
+        const data = await response.json();
         
-        console.log(`✅ Loaded ${formattedVideos.length} trending videos`);
-      } else {
-        throw new Error(data.message || 'Failed to fetch trending videos');
-      }
-    } catch (err) {
-      console.error('❌ Error fetching trending videos:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  };
-
-  // Load initial videos
-  useEffect(() => {
-    fetchTrendingVideos(1);
-  }, []);
-
-  // Load more videos
-  const loadMore = () => {
-    if (!loadingMore && hasMore) {
-      const nextPage = page + 1;
-      setPage(nextPage);
-      fetchTrendingVideos(nextPage, true);
-    }
-  };
-
-  // Handle scroll to load more
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 1000) {
-        loadMore();
+        console.log('📊 Trending videos response:', data);
+        
+        if (data.success) {
+          setTrendingVideos(data.data);
+          
+          // Check for different scenarios
+          if (data.data.length === 0) {
+            if (data.meta?.isFallback && data.meta?.message) {
+              // Database connectivity issues
+              if (data.meta.message.includes('database connection') || data.meta.message.includes('Database not connected')) {
+                setError('🔌 Database not connected. Please set up MongoDB to see trending videos.');
+              } else {
+                setError('No trending videos available at the moment.');
+              }
+            } else {
+              // No videos found but database is connected
+              setError('📈 No trending videos found. Upload and watch videos to see them trending!');
+            }
+          } else {
+            // We have videos!
+            if (data.meta?.isFallback) {
+              setError('📺 Showing recent videos (no videos with views found yet).');
+            } else {
+              setError(null); // Clear error when we have real trending videos
+            }
+          }
+        } else {
+          setError(data.message || 'Failed to fetch trending videos');
+        }
+      } catch (err) {
+        console.error('Error fetching trending videos:', err);
+        if (err.message.includes('Failed to fetch') || err.message.includes('ERR_CONNECTION_REFUSED') || err.message.includes('fetch')) {
+          setError('Unable to connect to server. Please make sure the backend is running on port 5000.');
+        } else if (err.message.includes('500')) {
+          setError('Server error. The backend is running but encountered an issue. Check server logs.');
+        } else {
+          setError('Failed to fetch trending videos');
+        }
+        setTrendingVideos([]); // Set empty array when there's an error
+      } finally {
+        setLoading(false);
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [loadingMore, hasMore, page]);
+    fetchTrendingVideos();
+  }, [timeframe, category]);
+
+  // Format video data for VideoCard component
+  const formatVideoData = (video) => {
+    return {
+      id: video._id,
+      title: video.title,
+      author: video.uploader?.channel?.name || video.uploader?.username || 'Unknown Channel',
+      authorHandle: video.uploader?.channel?.handle || video.uploader?.username,
+      views: formatViews(video.views),
+      date: formatDate(video.createdAt),
+      thumbnail: getThumbnailUrl(video.thumbnail),
+      duration: video.duration || '0:00',
+      videoUrl: video.videoUrl,
+      uploaderAvatar: video.uploader?.profilePicture ? 
+        `http://localhost:5000${video.uploader.profilePicture}` : '/images/user.jpg'
+    };
+  };
 
   if (loading) {
     return (
       <div className="trending-page">
         <div className="trending-header">
-          <h2 className="trending-title">
-            🔥 Trending
-          </h2>
-          <p className="trending-subtitle">Most viewed videos across the platform</p>
+          <h2>Trending</h2>
         </div>
-        <div className="trending-loading">
-          <div className="trending-loading-spinner"></div>
-          Loading trending videos...
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Loading trending videos...</p>
         </div>
       </div>
     );
@@ -134,42 +158,11 @@ export default function Trending({ onChannelClick, onVideoClick }) {
     return (
       <div className="trending-page">
         <div className="trending-header">
-          <h2 className="trending-title">
-            🔥 Trending
-          </h2>
-          <p className="trending-subtitle">Most viewed videos across the platform</p>
+          <h2>Trending</h2>
         </div>
-        <div className="trending-error">
-          <div style={{ marginBottom: '16px' }}>
-            Error loading trending videos: {error}
-          </div>
-          <button 
-            className="trending-retry-btn"
-            onClick={() => fetchTrendingVideos(1)}
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (videos.length === 0) {
-    return (
-      <div className="trending-page">
-        <div className="trending-header">
-          <h2 className="trending-title">
-            🔥 Trending
-          </h2>
-          <p className="trending-subtitle">Most viewed videos across the platform</p>
-        </div>
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <div style={{ fontSize: '16px', color: '#606060', marginBottom: '16px' }}>
-            No trending videos found
-          </div>
-          <div style={{ fontSize: '14px', color: '#909090' }}>
-            Upload and watch videos to see trending content!
-          </div>
+        <div className="error-container">
+          <p>Error: {error}</p>
+          <button onClick={() => window.location.reload()}>Retry</button>
         </div>
       </div>
     );
@@ -178,50 +171,77 @@ export default function Trending({ onChannelClick, onVideoClick }) {
   return (
     <div className="trending-page">
       <div className="trending-header">
-        <h2 className="trending-title">
-          🔥 Trending
-        </h2>
-        <p className="trending-subtitle">
-          Most viewed videos across the platform
-        </p>
-        <div className="trending-stats">
-          <div className="trending-stat">
-            <span>📺</span>
-            <span>{totalVideos} total videos</span>
+        <h2>Trending</h2>
+        <div className="trending-filters">
+          <div className="filter-group">
+            <label htmlFor="timeframe">Timeframe:</label>
+            <select 
+              id="timeframe"
+              value={timeframe} 
+              onChange={(e) => setTimeframe(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">All time</option>
+              <option value="today">Today</option>
+              <option value="week">This week</option>
+              <option value="month">This month</option>
+            </select>
           </div>
-          <div className="trending-stat">
-            <span>👀</span>
-            <span>Sorted by views</span>
-          </div>
-          <div className="trending-stat">
-            <span>📈</span>
-            <span>Updated in real-time</span>
+          
+          <div className="filter-group">
+            <label htmlFor="category">Category:</label>
+            <select 
+              id="category"
+              value={category} 
+              onChange={(e) => setCategory(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">All categories</option>
+              <option value="Entertainment">Entertainment</option>
+              <option value="Education">Education</option>
+              <option value="Technology">Technology</option>
+              <option value="Music">Music</option>
+              <option value="Gaming">Gaming</option>
+              <option value="Sports">Sports</option>
+              <option value="News">News</option>
+              <option value="Science">Science</option>
+            </select>
           </div>
         </div>
       </div>
-      
-      <div className="video-grid">
-        {videos.map((video, index) => (
-          <VideoCard 
-            key={video.id || index} 
-            {...video} 
-            onChannelClick={onChannelClick} 
-            onVideoClick={onVideoClick}
-          />
-        ))}
-      </div>
 
-      {loadingMore && (
-        <div className="trending-load-more">
-          <div className="trending-loading-spinner"></div>
-          Loading more trending videos...
+      {trendingVideos.length === 0 ? (
+        <div className="no-videos-container">
+          <div className="no-videos-icon">📈</div>
+          <h3>Trending Feature Ready!</h3>
+          <p>The trending videos system is working correctly.</p>
+          <p>Connect to a database to see trending videos based on view counts.</p>
+          {error && (
+            <div className="status-message">
+              <p>Status: {error}</p>
+            </div>
+          )}
         </div>
-      )}
-
-      {!hasMore && videos.length > 0 && (
-        <div className="trending-end">
-          🎉 You've reached the end of trending videos
-        </div>
+      ) : (
+        <>
+          <div className="trending-stats">
+            <p>{trendingVideos.length} trending video{trendingVideos.length !== 1 ? 's' : ''} 
+               {timeframe !== 'all' && ` for ${timeframe}`}
+               {category !== 'all' && ` in ${category}`}
+            </p>
+          </div>
+          
+          <div className="video-grid">
+            {trendingVideos.map((video) => (
+              <VideoCard 
+                key={video._id} 
+                {...formatVideoData(video)} 
+                onChannelClick={onChannelClick} 
+                onVideoClick={onVideoClick} 
+              />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

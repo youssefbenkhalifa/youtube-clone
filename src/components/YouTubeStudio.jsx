@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import ChannelAnalytics from './ChannelAnalytics';
 import './YouTubeStudio.css';
 
 // Helper to get the correct thumbnail URL
@@ -9,6 +10,15 @@ function getThumbnailUrl(thumbnail) {
     return `http://localhost:5000${thumbnail}`;
   }
   return thumbnail;
+}
+
+// Helper to get the correct avatar URL
+function getAvatarUrl(avatar) {
+  if (!avatar) return '/images/user.jpg';
+  if (avatar.startsWith('/uploads/')) {
+    return `http://localhost:5000${avatar}`;
+  }
+  return avatar;
 }
 
 // Helper for formatting date
@@ -38,6 +48,13 @@ function formatDuration(seconds) {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = Math.floor(seconds % 60);
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
+// Helper to truncate description
+function truncateDescription(description, maxLength = 60) {
+  if (!description) return "Add description";
+  if (description.length <= maxLength) return description;
+  return description.substring(0, maxLength) + "...";
 }
 
 export default function YouTubeStudio({ showUploadModal = false }) {
@@ -91,8 +108,8 @@ export default function YouTubeStudio({ showUploadModal = false }) {
           id: video._id,
           title: video.title,
           description: video.description || "Add description",
+          displayDescription: truncateDescription(video.description),
           visibility: video.visibility || "Unlisted",
-          restrictions: "None",
           date: formatDate(video.createdAt),
           uploadStatus: "Uploaded",
           views: video.views || 0,
@@ -649,7 +666,6 @@ export default function YouTubeStudio({ showUploadModal = false }) {
                       </div>
                       <div className="table-cell video-cell">Video</div>
                       <div className="table-cell visibility-cell visb" >Visibility</div>
-                      <div className="table-cell restrictions-cell">Restrictions</div>
                       <div className="table-cell date-cell">Date <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
                         <path d="M7 10l5 5 5-5z" fill="#606060"/>
                       </svg></div>
@@ -661,11 +677,11 @@ export default function YouTubeStudio({ showUploadModal = false }) {
                   </div>
                   <div className="table-body">
                     {loadingVideos ? (
-                      <div className="table-row"><div className="table-cell" colSpan={9}>Loading...</div></div>
+                      <div className="table-row"><div className="table-cell" colSpan={8}>Loading...</div></div>
                     ) : videoError ? (
-                      <div className="table-row"><div className="table-cell" colSpan={9}>{videoError}</div></div>
+                      <div className="table-row"><div className="table-cell" colSpan={8}>{videoError}</div></div>
                     ) : videos.length === 0 ? (
-                      <div className="table-row"><div className="table-cell" colSpan={9}>No videos uploaded yet.</div></div>
+                      <div className="table-row"><div className="table-cell" colSpan={8}>No videos uploaded yet.</div></div>
                     ) : (
                       videos.map((video) => (
                         <div key={video.id} className="table-row video-row">
@@ -682,7 +698,7 @@ export default function YouTubeStudio({ showUploadModal = false }) {
                             </div>
                             <div className="video-info">
                               <div className="video-title">{video.title}</div>
-                              <div className="video-description">{video.description}</div>
+                              <div className="video-description">{video.displayDescription}</div>
                             </div>
                           </div>
                           <div className="table-cell visibility-cell">
@@ -693,10 +709,10 @@ export default function YouTubeStudio({ showUploadModal = false }) {
                               <span>{video.visibility}</span>
                             </div>
                           </div>
-                          <div className="table-cell restrictions-cell">{video.restrictions}</div>
-                          <div className="table-cell date-cell">                            <div>{video.date}</div>
+                          <div className="table-cell date-cell">
+                            <div>{video.date}</div>
                             <div className="upload-status">{video.createdAt ? getDaysAgo(video.createdAt) : video.uploadStatus}</div>
-                            </div>
+                          </div>
                           <div className="table-cell views-cell">{video.views}</div>
                           <div className="table-cell comments-cell">{video.comments}</div>
                           <div className="table-cell likes-cell">{video.likes === 0 ? "—" : video.likes}</div>
@@ -727,12 +743,7 @@ export default function YouTubeStudio({ showUploadModal = false }) {
           )}
 
           {selectedTab === 'analytics' && (
-            <div className="studio-analytics">
-              <h1>Channel analytics</h1>
-              <div className="analytics-empty">
-                <p>Analytics will appear here once you upload content</p>
-              </div>
-            </div>
+            <ChannelAnalytics user={user} />
           )}
 
           {selectedTab === 'comments' && (
