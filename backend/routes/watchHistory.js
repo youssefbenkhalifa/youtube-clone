@@ -80,7 +80,7 @@ router.post('/watch-history', auth, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Error updating watch history:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Error updating watch history'
@@ -136,7 +136,7 @@ router.get('/watch-history', auth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching watch history:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Error fetching watch history'
@@ -173,7 +173,7 @@ router.delete('/watch-history/:videoId', auth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error removing from watch history:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Error removing from watch history'
@@ -206,7 +206,7 @@ router.delete('/watch-history', auth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error clearing watch history:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Error clearing watch history'

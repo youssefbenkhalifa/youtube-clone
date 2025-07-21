@@ -129,7 +129,7 @@ export default function YouTubeStudio({ showUploadModal = false }) {
         setVideoError(data.message || 'Failed to fetch videos');
       }
     } catch (err) {
-      console.error('Error fetching videos:', err);
+
       setVideoError('Failed to fetch videos');
     } finally {
       setLoadingVideos(false);
@@ -155,7 +155,6 @@ export default function YouTubeStudio({ showUploadModal = false }) {
   const fetchUser = async () => {
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      console.log('📦 Fetching user with token:', token); // 🔍
       
       // First, initialize channel data if needed
       try {
@@ -166,7 +165,7 @@ export default function YouTubeStudio({ showUploadModal = false }) {
           }
         });
       } catch (initError) {
-        console.log('Channel init not needed or failed:', initError);
+
       }
       
       const res = await fetch('http://localhost:5000/api/auth/me', {
@@ -175,14 +174,12 @@ export default function YouTubeStudio({ showUploadModal = false }) {
         }
       });
       const data = await res.json();
-      console.log('👤 User fetch result:', data); // 🔍
       if (data && data.user && data.user.id) {
         setUser(data.user);
       } else {
-        console.error('User fetch failed (no id):', data);
       }
     } catch (err) {
-      console.error('❌ Failed to load user info', err);
+
     }
   };
   fetchUser();
@@ -214,8 +211,8 @@ export default function YouTubeStudio({ showUploadModal = false }) {
         });
         
         const data = await response.json();
-        console.log('🔍 Fetched channel data:', data);
-        console.log('🔍 User channel:', data.user?.channel);
+
+
         if (data.success && data.user) {
           setChannelData({
             name: data.user.channel?.name || '',
@@ -223,17 +220,11 @@ export default function YouTubeStudio({ showUploadModal = false }) {
             description: data.user.channel?.description || '',
             avatar: data.user.channel?.avatar || ''
           });
-          console.log('✅ Channel data set:', {
-            name: data.user.channel?.name || '',
-            handle: data.user.channel?.handle || '',
-            description: data.user.channel?.description || '',
-            avatar: data.user.channel?.avatar || ''
-          });
         } else {
-          console.error('❌ Failed to fetch channel data:', data);
+
         }
       } catch (error) {
-        console.error('Error fetching channel data:', error);
+
         setChannelMessage('Failed to load channel data');
       } finally {
         setChannelLoading(false);
@@ -328,7 +319,7 @@ export default function YouTubeStudio({ showUploadModal = false }) {
       xhr.onload = () => {
         if (xhr.status === 201) {
           const response = JSON.parse(xhr.responseText);
-          console.log('Upload successful:', response);
+
           setUploadProgress(100);
           // Store the uploaded video ID for later use
           if (response.data && response.data.id) {
@@ -336,13 +327,13 @@ export default function YouTubeStudio({ showUploadModal = false }) {
           }
         } else {
           const error = JSON.parse(xhr.responseText);
-          console.error('Upload failed:', error);
+
           alert('Upload failed: ' + (error.message || 'Unknown error'));
           setIsUploading(false);
         }
       };
       xhr.onerror = () => {
-        console.error('Upload failed due to network error');
+
         alert('Upload failed due to network error');
         setIsUploading(false);
       };
@@ -350,7 +341,7 @@ export default function YouTubeStudio({ showUploadModal = false }) {
       xhr.setRequestHeader('Authorization', `Bearer ${token}`);
       xhr.send(formData);
     } catch (error) {
-      console.error('Upload error:', error);
+
       alert('Upload failed: ' + error.message);
       setIsUploading(false);
     }
@@ -430,7 +421,7 @@ export default function YouTubeStudio({ showUploadModal = false }) {
       }
       
     } catch (error) {
-      console.error('Error publishing video:', error);
+
       const errorToast = document.createElement('div');
       errorToast.className = 'toast error-toast';
       errorToast.textContent = 'Error publishing video: ' + error.message;
@@ -500,7 +491,7 @@ export default function YouTubeStudio({ showUploadModal = false }) {
       const data = await response.json();
       
       if (response.ok) {
-        setChannelMessage('✅ Channel updated successfully!');
+        setChannelMessage('Channel updated successfully!');
         setSelectedAvatar(null);
         // Update channel data with the response
         if (data.user && data.user.channel) {
@@ -517,11 +508,11 @@ export default function YouTubeStudio({ showUploadModal = false }) {
           fetchVideos();
         }
       } else {
-        setChannelMessage(`❌ ${data.msg || 'Failed to update channel'}`);
+        setChannelMessage(`${data.msg || 'Failed to update channel'}`);
       }
     } catch (error) {
-      console.error('Error updating channel:', error);
-      setChannelMessage('❌ Network error occurred');
+
+      setChannelMessage('Network error occurred');
     } finally {
       setChannelLoading(false);
     }
@@ -845,7 +836,7 @@ export default function YouTubeStudio({ showUploadModal = false }) {
                   </div>
 
                   {channelMessage && (
-                    <div className={`message ${channelMessage.includes('✅') ? 'success' : 'error'}`}>
+                    <div className={`message ${channelMessage.includes('Channel updated') ? 'success' : 'error'}`}>
                       {channelMessage}
                     </div>
                   )}

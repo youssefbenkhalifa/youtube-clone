@@ -35,7 +35,7 @@ function Sidebar({ user }) {
           setSubscriptions(data.subscriptions.slice(0, 7));
         }
       } catch (error) {
-        console.error('Error fetching subscriptions:', error);
+
       } finally {
         setSubscriptionsLoading(false);
       }

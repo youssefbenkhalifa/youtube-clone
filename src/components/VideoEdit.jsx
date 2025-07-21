@@ -17,9 +17,7 @@ function getVideoUrl(videoPath) {
 }
 
 export default function VideoEdit() {
-  console.log('🎬 VideoEdit component mounted');
   const { videoId } = useParams();
-  console.log('🆔 Video ID from params:', videoId);
   const navigate = useNavigate();
   const [video, setVideo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -42,9 +40,7 @@ export default function VideoEdit() {
   useEffect(() => {
     const fetchVideo = async () => {
       try {
-        console.log('🔍 Fetching video data for ID:', videoId);
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-        console.log('🔑 Token available:', !!token);
         
         const response = await fetch(`http://localhost:5000/api/videos/${videoId}`, {
           headers: {
@@ -52,9 +48,9 @@ export default function VideoEdit() {
           }
         });
         
-        console.log('📡 Fetch response status:', response.status);
+
         const data = await response.json();
-        console.log('📦 Fetch response data:', data);
+
         
         if (data.success) {
           setVideo(data.data);
@@ -67,17 +63,17 @@ export default function VideoEdit() {
           setIsFeatured(featuredStatus);
           setThumbnailPreview(getThumbnailUrl(data.data.thumbnail));
           
-          console.log('✅ Video data loaded successfully');
-          console.log('🌟 Raw isFeatured from backend:', data.data.isFeatured);
-          console.log('🌟 isFeatured type:', typeof data.data.isFeatured);
-          console.log('🌟 Converted to boolean:', featuredStatus);
-          console.log('🌟 Setting local isFeatured state to:', featuredStatus);
+
+
+
+
+
         } else {
-          console.error('❌ Failed to fetch video:', data.message);
+
           setError(data.message || 'Failed to fetch video');
         }
       } catch (err) {
-        console.error('🚨 Error fetching video:', err);
+
         setError('Failed to fetch video');
       } finally {
         setLoading(false);
@@ -91,7 +87,7 @@ export default function VideoEdit() {
 
   // Debug effect to track isFeatured state changes
   useEffect(() => {
-    console.log('🔄 isFeatured state changed to:', isFeatured);
+
   }, [isFeatured]);
 
   const initiateHandleSave = () => {
@@ -103,8 +99,8 @@ export default function VideoEdit() {
     setSaving(true);
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      console.log('🔧 Starting save process...', { videoId, title, description, visibility, isFeatured });
-      console.log('🔑 Token available:', !!token);
+
+
       
       const formData = new FormData();
       
@@ -113,18 +109,12 @@ export default function VideoEdit() {
       formData.append('visibility', visibility);
       formData.append('isFeatured', String(isFeatured)); // Explicitly convert to string
       
-      console.log('📋 FormData being sent:');
-      console.log('  - title:', title);
-      console.log('  - description:', description);
-      console.log('  - visibility:', visibility);
-      console.log('  - isFeatured:', isFeatured, '(converted to string:', String(isFeatured), ')');
-      
       if (selectedThumbnail) {
         formData.append('thumbnail', selectedThumbnail);
-        console.log('🖼️ Thumbnail included in request');
+
       }
 
-      console.log('📡 Making PUT request to:', `http://localhost:5000/api/videos/${videoId}`);
+
       const response = await fetch(`http://localhost:5000/api/videos/${videoId}`, {
         method: 'PUT',
         headers: {
@@ -133,9 +123,9 @@ export default function VideoEdit() {
         body: formData
       });
 
-      console.log('📨 Response status:', response.status);
+
       const data = await response.json();
-      console.log('📦 Response data:', data);
+
       
       if (data.success) {
         // Show success toast instead of alert
@@ -149,9 +139,9 @@ export default function VideoEdit() {
           }
         }, 3000);
         
-        console.log('🔍 Response data after save:', data);
-        console.log('🔍 Response data.data:', data.data);
-        console.log('🔍 Response data.data.isFeatured:', data.data.isFeatured);
+
+
+
         
         setVideo(prev => ({ 
           ...prev, 
@@ -164,10 +154,10 @@ export default function VideoEdit() {
         if (data.data.thumbnail) {
           setThumbnailPreview(getThumbnailUrl(data.data.thumbnail));
         }
-        console.log('✅ Save successful - Local state updated');
-        console.log('🔍 Local isFeatured state is now:', isFeatured);
+
+
       } else {
-        console.error('❌ Save failed:', data);
+
         const errorToast = document.createElement('div');
         errorToast.className = 'toast error-toast';
         errorToast.textContent = 'Failed to save changes: ' + (data.message || 'Unknown error');
@@ -177,7 +167,7 @@ export default function VideoEdit() {
         }, 5000);
       }
     } catch (err) {
-      console.error('🚨 Error in save process:', err);
+
       const errorToast = document.createElement('div');
       errorToast.className = 'toast error-toast';
       errorToast.textContent = 'Failed to save changes: ' + err.message;
@@ -198,7 +188,7 @@ export default function VideoEdit() {
     setShowDeleteDialog(false);
     
     try {
-      console.log('🗑️ Deleting video with ID:', videoId);
+
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       
       const response = await fetch(`http://localhost:5000/api/videos/${videoId}`, {
@@ -209,7 +199,7 @@ export default function VideoEdit() {
       });
 
       const data = await response.json();
-      console.log('🗑️ Delete response:', data);
+
       
       if (data.success) {
         // Show success toast
@@ -228,9 +218,9 @@ export default function VideoEdit() {
           navigate('/studio');
         }, 1500);
         
-        console.log('✅ Delete successful');
+
       } else {
-        console.error('❌ Delete failed:', data);
+
         const errorToast = document.createElement('div');
         errorToast.className = 'toast error-toast';
         errorToast.textContent = 'Failed to delete video: ' + (data.message || 'Unknown error');
@@ -242,7 +232,7 @@ export default function VideoEdit() {
         }, 5000);
       }
     } catch (err) {
-      console.error('🚨 Error in delete process:', err);
+
       const errorToast = document.createElement('div');
       errorToast.className = 'toast error-toast';
       errorToast.textContent = 'Failed to delete video: ' + err.message;

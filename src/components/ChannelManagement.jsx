@@ -36,7 +36,7 @@ const ChannelManagement = () => {
         setError(data.message);
       }
     } catch (err) {
-      console.error('Error fetching channels:', err);
+
       setError('Failed to load channels');
     } finally {
       setLoading(false);
@@ -69,7 +69,7 @@ const ChannelManagement = () => {
         setError(data.message);
       }
     } catch (err) {
-      console.error('Error creating channel:', err);
+
       setError('Failed to create channel');
     }
   };
@@ -104,7 +104,7 @@ const ChannelManagement = () => {
         setError(data.message);
       }
     } catch (err) {
-      console.error('Error updating channel:', err);
+
       setError('Failed to update channel');
     }
   };
@@ -131,7 +131,7 @@ const ChannelManagement = () => {
         setError(data.message);
       }
     } catch (err) {
-      console.error('Error deleting channel:', err);
+
       setError('Failed to delete channel');
     }
   };

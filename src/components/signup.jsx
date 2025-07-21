@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './login.css'; // ✅ Reuse the same styling file
+import './login.css'; // Reuse the same styling file
 
 export default function Signup({ setUser }) {
   const navigate = useNavigate();

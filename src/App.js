@@ -5,6 +5,7 @@ import './App.css';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 import VideoGrid from './components/VideoGrid';
+import SearchResults from './components/SearchResults';
 import Channel from './components/Channel';
 import VideoWatch from './components/VideoWatch';
 import Trending from './components/Trending';
@@ -20,6 +21,7 @@ import Signup from './components/signup';
 import EditProfile from './components/EditProfile';
 import YouTubeStudio from './components/YouTubeStudio';
 import VideoEdit from './components/VideoEdit';
+import AdminDashboard from './components/AdminDashboard';
 import { SidebarProvider, useSidebar } from './context/SidebarContext';
 
 // Main App Content Component (needs to be separate to use sidebar context)
@@ -33,6 +35,7 @@ function MainAppContent({ user, setUser }) {
       <div className="main">
         <Routes>
           <Route path="/" element={<VideoGrid />} />
+          <Route path="/search" element={<SearchResults />} />
           <Route path="/trending" element={<Trending />} />
           <Route path="/subscriptions" element={<Subscriptions />} />
           <Route path="/library" element={<Library />} />
@@ -110,7 +113,7 @@ export default function App() {
           }
         }
       } catch (error) {
-        console.error('Auth check failed:', error);
+
         // Remove invalid tokens
         localStorage.removeItem('token');
         localStorage.removeItem('rememberMe');
@@ -145,6 +148,11 @@ export default function App() {
             {/* Authentication Routes */}
             <Route path="/login" element={<Login setUser={setUser} />} />
             <Route path="/signup" element={<Signup setUser={setUser} />} />
+            
+            {/* Admin Routes */}
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/login" element={<Navigate to="/login" replace />} />
+            <Route path="/admin" element={<Navigate to="/login" replace />} />
             
             {/* Protected Routes - require authentication */}
             <Route path="/studio" element={

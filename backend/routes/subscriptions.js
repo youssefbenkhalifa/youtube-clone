@@ -91,7 +91,7 @@ router.post('/subscribe/:userId', auth, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Error subscribing:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Server error while subscribing'
@@ -171,7 +171,7 @@ router.post('/unsubscribe/:userId', auth, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Error unsubscribing:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Server error while unsubscribing'
@@ -214,7 +214,7 @@ router.get('/status/:userId', auth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error checking subscription status:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Server error while checking subscription status'
@@ -243,7 +243,7 @@ router.get('/my-subscriptions', auth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error getting subscriptions:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Server error while getting subscriptions'
@@ -284,7 +284,7 @@ router.get('/subscribers/:userId', auth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error getting subscribers:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Server error while getting subscribers'
@@ -359,7 +359,7 @@ router.get('/feed', auth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error getting subscription feed:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Server error while getting subscription feed'

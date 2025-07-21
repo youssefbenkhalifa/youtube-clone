@@ -35,7 +35,7 @@ function getVideoDuration(filePath) {
 
     ffprobeProcess.on('close', (code) => {
       if (code !== 0) {
-        console.error('Error getting video duration:', stderr);
+        
         resolve('0:00'); // Return default duration on error
         return;
       }
@@ -60,13 +60,13 @@ function getVideoDuration(filePath) {
           resolve(`${minutes}:${seconds.toString().padStart(2, '0')}`);
         }
       } catch (error) {
-        console.error('Error processing video duration:', error);
+        
         resolve('0:00');
       }
     });
 
     ffprobeProcess.on('error', (error) => {
-      console.error('Error spawning ffprobe:', error);
+      
       resolve('0:00');
     });
   });
@@ -214,7 +214,7 @@ router.get('/:id/comments', optionalAuth, async (req, res, next) => {
 
     res.json({ success: true, comments: commentsWithUserStatus });
   } catch (error) {
-    console.error('Error fetching comments:', error);
+    
     res.status(500).json({ success: false, message: 'Error fetching comments' });
   }
 });
@@ -259,7 +259,7 @@ router.post('/:videoId/comments/:commentId/reply', auth, async (req, res) => {
       reply
     });
   } catch (error) {
-    console.error('Error adding reply:', error);
+    
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
@@ -298,7 +298,7 @@ router.post('/comments/:commentId/like', auth, async (req, res) => {
       dislikeCount: comment.dislikeCount
     });
   } catch (error) {
-    console.error('Error liking comment:', error);
+    
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
@@ -337,7 +337,7 @@ router.post('/comments/:commentId/dislike', auth, async (req, res) => {
       dislikeCount: comment.dislikeCount
     });
   } catch (error) {
-    console.error('Error disliking comment:', error);
+    
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
@@ -362,7 +362,7 @@ router.get('/comments/:commentId/replies', async (req, res) => {
       replies: comment.replies
     });
   } catch (error) {
-    console.error('Error fetching replies:', error);
+    
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
@@ -374,11 +374,9 @@ const uploadsVideoDir = path.join(__dirname, '../uploads/videos');
 const uploadsThumbDir = path.join(__dirname, '../uploads/thumbnails');
 if (!fs.existsSync(uploadsVideoDir)) {
   fs.mkdirSync(uploadsVideoDir, { recursive: true });
-  console.log('📁 Created uploads/videos directory');
 }
 if (!fs.existsSync(uploadsThumbDir)) {
   fs.mkdirSync(uploadsThumbDir, { recursive: true });
-  console.log('📁 Created uploads/thumbnails directory');
 }
 
 // Configure multer for video and thumbnail uploads
@@ -424,12 +422,6 @@ router.post('/upload', auth, upload.fields([
   { name: 'video', maxCount: 1 },
   { name: 'thumbnail', maxCount: 1 }
 ]), async (req, res) => {
-  // Debug: log incoming files and body
-  console.log('FILES:', req.files);
-  console.log('BODY:', req.body);
-  // Debug: log incoming files and body
-  console.log('FILES:', req.files);
-  console.log('BODY:', req.body);
   try {
     const videoFile = req.files && req.files.video ? req.files.video[0] : null;
     const thumbFile = req.files && req.files.thumbnail ? req.files.thumbnail[0] : null;
@@ -464,12 +456,12 @@ router.post('/upload', auth, upload.fields([
 
     // Handle featured video logic - only one video per user can be featured
     if (isFeatured === 'true' || isFeatured === true) {
-      console.log('🌟 Marking new video as featured and unfeaturing others...');
+      
       await Video.updateMany(
         { uploader: req.user.id },
         { isFeatured: false }
       );
-      console.log('✅ Other videos unfeatured');
+      
     }
 
     // Build thumbnail URL if uploaded
@@ -480,7 +472,6 @@ router.post('/upload', auth, upload.fields([
 
     // Extract video duration
     const videoDuration = await getVideoDuration(videoFile.path);
-    console.log(`📹 Extracted video duration: ${videoDuration}`);
 
     // Create video document
     const video = new Video({
@@ -513,7 +504,7 @@ router.post('/upload', auth, upload.fields([
         video.processingStatus = 'ready';
         await video.save();
       } catch (error) {
-        console.error('Error updating video status:', error);
+        
       }
     }, 3000);
 
@@ -542,7 +533,7 @@ router.post('/upload', auth, upload.fields([
       }
     }
 
-    console.error('Video upload error:', error);
+    
 
     if (error.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
@@ -605,10 +596,103 @@ router.get('/', optionalAuth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching videos:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Error fetching videos',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// @route   GET /api/videos/search
+// @desc    Search videos by title, description, tags, or uploader
+// @access  Public
+router.get('/search', async (req, res) => {
+  try {
+    const { q, page = 1, limit = 20 } = req.query;
+    
+    if (!q || q.trim() === '') {
+      return res.json({
+        success: true,
+        data: [],
+        message: 'Please provide a search query'
+      });
+    }
+
+    const searchQuery = q.trim();
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Create search criteria - search in multiple fields
+    const searchCriteria = {
+      $and: [
+        { visibility: 'public' }, // Only search public videos
+        {
+          $or: [
+            { title: { $regex: searchQuery, $options: 'i' } },
+            { description: { $regex: searchQuery, $options: 'i' } },
+            { tags: { $in: [new RegExp(searchQuery, 'i')] } }
+          ]
+        }
+      ]
+    };
+
+    // Execute search with pagination
+    const videos = await Video.find(searchCriteria)
+      .populate('uploader', 'username profilePicture channel.name channel.handle channel.avatar')
+      .select('-filePath') // Exclude file path for security
+      .sort({ createdAt: -1 }) // Most recent first
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+
+    // Count total results for pagination
+    const total = await Video.countDocuments(searchCriteria);
+
+    // Format the response
+    const formattedVideos = videos.map(video => ({
+      _id: video._id,
+      title: video.title,
+      description: video.description,
+      thumbnail: video.thumbnail,
+      duration: video.duration,
+      views: video.views || 0,
+      likes: video.likes?.length || 0,
+      createdAt: video.createdAt,
+      uploader: {
+        _id: video.uploader._id,
+        username: video.uploader.username,
+        profilePicture: video.uploader.profilePicture,
+        channel: {
+          ...video.uploader.channel,
+          // Ensure handle starts with @ if it exists
+          handle: video.uploader.channel?.handle 
+            ? (video.uploader.channel.handle.startsWith('@') 
+               ? video.uploader.channel.handle 
+               : `@${video.uploader.channel.handle}`)
+            : `@${video.uploader.username}`
+        }
+      },
+      tags: video.tags
+    }));
+
+    res.json({
+      success: true,
+      data: formattedVideos,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / parseInt(limit))
+      },
+      searchQuery: searchQuery
+    });
+
+  } catch (error) {
+    console.error('Search error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error searching videos',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
@@ -645,7 +729,7 @@ router.get('/my', auth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching user videos:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Error fetching videos',
@@ -694,7 +778,7 @@ router.get('/liked', auth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching liked videos:', error);
+    
     res.status(500).json({ 
       success: false, 
       message: 'Error fetching liked videos' 
@@ -706,10 +790,10 @@ router.get('/liked', auth, async (req, res) => {
 // @desc    Get trending videos (most viewed)
 // @access  Public
 router.get('/trending', async (req, res) => {
-  console.log('📈 Trending endpoint hit');
+  
   
   try {
-    console.log('📈 Processing trending request...');
+    
     
     const { 
       limit = 24, 
@@ -717,11 +801,11 @@ router.get('/trending', async (req, res) => {
       category = 'all' 
     } = req.query;
     
-    console.log('📊 Query params:', { limit, timeframe, category });
+    
     
     // Check if mongoose is connected
     if (!mongoose.connection.readyState) {
-      console.log('❌ Database not connected, returning empty data');
+      
       return res.json({
         success: true,
         data: [],
@@ -736,7 +820,7 @@ router.get('/trending', async (req, res) => {
       });
     }
     
-    console.log('✅ Database connected, querying trending videos...');
+    
     
     // Build date filter based on timeframe
     let dateFilter = {};
@@ -782,12 +866,12 @@ router.get('/trending', async (req, res) => {
     })
     .limit(parseInt(limit));
     
-    console.log(`📊 Found ${trendingVideos.length} trending videos with views > 0`);
+    
     
     // If no videos found with views > 0, get some recent public videos as fallback
     let fallbackVideos = [];
     if (trendingVideos.length === 0) {
-      console.log('📺 No videos with views found, getting recent public videos...');
+      
       fallbackVideos = await Video.find({
         visibility: 'public',
         ...categoryFilter
@@ -797,7 +881,7 @@ router.get('/trending', async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(parseInt(limit));
       
-      console.log(`📺 Found ${fallbackVideos.length} fallback videos`);
+      
     }
     
     const resultVideos = trendingVideos.length > 0 ? trendingVideos : fallbackVideos;
@@ -823,7 +907,7 @@ router.get('/trending', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ Trending route error:', error);
+    
     
     // Always send 200 with error info in response
     res.status(200).json({
@@ -911,7 +995,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching video:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Error fetching video',
@@ -965,7 +1049,7 @@ router.get('/stream/:filename', (req, res) => {
     }
 
   } catch (error) {
-    console.error('Error streaming video:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Error streaming video'
@@ -978,16 +1062,16 @@ router.get('/stream/:filename', (req, res) => {
 // @access  Private
 router.put('/:id', auth, upload.single('thumbnail'), async (req, res) => {
   try {
-    console.log('🔧 PUT /api/videos/:id - Request received');
-    console.log('📝 Video ID:', req.params.id);
-    console.log('👤 User ID:', req.user.id);
-    console.log('📦 Request body:', req.body);
-    console.log('📁 Uploaded file:', req.file ? req.file.filename : 'No file');
+    
+    
+    
+    
+    
     
     const video = await Video.findById(req.params.id);
 
     if (!video) {
-      console.log('❌ Video not found:', req.params.id);
+      
       return res.status(404).json({
         success: false,
         message: 'Video not found'
@@ -996,9 +1080,6 @@ router.put('/:id', auth, upload.single('thumbnail'), async (req, res) => {
 
     // Check if user owns this video
     if (video.uploader.toString() !== req.user.id) {
-      console.log('🚫 Access denied - user does not own video');
-      console.log('Video uploader:', video.uploader.toString());
-      console.log('Request user:', req.user.id);
       return res.status(403).json({
         success: false,
         message: 'Access denied'
@@ -1016,20 +1097,11 @@ router.put('/:id', auth, upload.single('thumbnail'), async (req, res) => {
       category
     } = req.body;
 
-    console.log('📋 Request body received:');
-    console.log('  - title:', title);
-    console.log('  - description:', description);
-    console.log('  - visibility:', visibility);
-    console.log('  - isFeatured:', isFeatured, typeof isFeatured);
-    console.log('  - Full req.body:', JSON.stringify(req.body, null, 2));
-    console.log('  - Video ID being updated:', req.params.id);
-    console.log('  - User ID making request:', req.user.id);
-
     // Handle featured video logic - only one video per user can be featured
-    console.log('🌟 Processing featured video logic...');
-    console.log('  - Current video.isFeatured:', video.isFeatured);
-    console.log('  - Requested isFeatured:', isFeatured);
-    console.log('  - isFeatured type:', typeof isFeatured);
+    
+    
+    
+    
     
     if (isFeatured !== undefined && isFeatured !== null) {
       // Convert string 'true'/'false' to boolean (FormData sends as string)
@@ -1039,21 +1111,21 @@ router.put('/:id', auth, upload.single('thumbnail'), async (req, res) => {
       } else {
         featuredBoolean = Boolean(isFeatured);
       }
-      console.log('  - Converted to boolean:', featuredBoolean);
+      
       
       if (featuredBoolean === true) {
         // If marking this video as featured, unfeature all other videos by this user first
-        console.log('🌟 Marking video as featured and unfeaturing others...');
+        
         const unfeaturedResult = await Video.updateMany(
           { uploader: req.user.id, _id: { $ne: video._id } },
           { $set: { isFeatured: false } }
         );
-        console.log('✅ Unfeatured result:', unfeaturedResult.modifiedCount, 'videos updated');
+        
       }
       
       // Set the featured status on this video
       video.isFeatured = featuredBoolean;
-      console.log('  - Set video.isFeatured to:', video.isFeatured);
+      
     }
 
     // Update fields
@@ -1073,21 +1145,21 @@ router.put('/:id', auth, upload.single('thumbnail'), async (req, res) => {
         if (fs.existsSync(oldThumbnailPath)) {
           try {
             fs.unlinkSync(oldThumbnailPath);
-            console.log('🗑️ Deleted old thumbnail:', oldThumbnailPath);
+            
           } catch (err) {
-            console.log('⚠️ Could not delete old thumbnail:', err.message);
+            
           }
         }
       }
       
       // Set new thumbnail path
       video.thumbnail = `/uploads/thumbnails/${req.file.filename}`;
-      console.log('🖼️ Updated thumbnail:', video.thumbnail);
+      
     }
 
-    console.log('💾 Saving video changes to MongoDB...');
+    
     const savedVideo = await video.save();
-    console.log('✅ Video successfully saved to MongoDB');
+    
     console.log('🔍 Final video state after save:', {
       id: savedVideo._id,
       title: savedVideo.title,
@@ -1103,7 +1175,7 @@ router.put('/:id', auth, upload.single('thumbnail'), async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error updating video:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Error updating video',
@@ -1148,7 +1220,7 @@ router.delete('/:id', auth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error deleting video:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Error deleting video',
@@ -1181,9 +1253,9 @@ router.post('/:id/view', async (req, res) => {
 // @access  Private
 router.post('/:id/test-featured', auth, async (req, res) => {
   try {
-    console.log('🧪 TEST FEATURED ROUTE CALLED');
-    console.log('  - Video ID:', req.params.id);
-    console.log('  - User ID:', req.user.id);
+    
+    
+    
     
     const video = await Video.findById(req.params.id);
     if (!video) {
@@ -1194,23 +1266,23 @@ router.post('/:id/test-featured', auth, async (req, res) => {
       return res.status(403).json({ success: false, message: 'Access denied' });
     }
     
-    console.log('  - Current video.isFeatured:', video.isFeatured);
+    
     
     // Unfeature all other videos by this user
     const unfeaturedResult = await Video.updateMany(
       { uploader: req.user.id, _id: { $ne: video._id } },
       { isFeatured: false }
     );
-    console.log('  - Unfeatured other videos:', unfeaturedResult.modifiedCount);
+    
     
     // Feature this video
     video.isFeatured = true;
     await video.save();
-    console.log('  - Video featured successfully');
+    
     
     // Verify
     const updatedVideo = await Video.findById(req.params.id);
-    console.log('  - Verification - isFeatured:', updatedVideo.isFeatured);
+    
     
     res.json({
       success: true,
@@ -1223,7 +1295,7 @@ router.post('/:id/test-featured', auth, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ Test featured route error:', error);
+    
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
@@ -1312,7 +1384,7 @@ router.post('/:id/report', auth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error submitting report:', error);
+    
     res.status(500).json({ 
       success: false, 
       message: 'Failed to submit report' 

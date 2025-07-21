@@ -131,7 +131,7 @@ router.post('/signup', upload.single('profilePicture'), async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('Signup error:', err);
+    
     res.status(500).json({ msg: 'Server error' });
   }
 });
@@ -172,7 +172,7 @@ router.post('/login', async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('Login error:', err);
+    
     res.status(500).json({ msg: 'Server error' });
   }
 });
@@ -200,7 +200,7 @@ router.get('/me', auth, async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('❌ Error in /me:', err);
+    
     res.status(500).json({ msg: 'Server error' });
   }
 });
@@ -228,7 +228,7 @@ router.get('/debug/me', auth, async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('❌ Error in debug /me:', err);
+    
     res.status(500).json({ msg: 'Server error' });
   }
 });
@@ -255,7 +255,7 @@ router.post('/init-channel', auth, async (req, res) => {
       };
       
       await user.save();
-      console.log('✅ Initialized channel for user:', user.username);
+      
     }
 
     res.json({ 
@@ -264,7 +264,7 @@ router.post('/init-channel', auth, async (req, res) => {
       channel: user.channel
     });
   } catch (err) {
-    console.error('❌ Error initializing channel:', err);
+    
     res.status(500).json({ msg: 'Server error' });
   }
 });

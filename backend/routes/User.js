@@ -48,7 +48,7 @@ const profileUpload = multer({
 
 // ✅ PUT /api/user/channel (update name, description, avatar)
 router.put('/channel', auth, upload.single('avatar'), async (req, res) => {
-  console.log('🟢 PUT /api/user/channel called');
+  
   try {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ msg: 'User not found' });
@@ -72,14 +72,14 @@ router.put('/channel', auth, upload.single('avatar'), async (req, res) => {
     await user.save();
     res.json({ user });
   } catch (err) {
-    console.error('❌ Error in /channel:', err);
+    
     res.status(500).json({ msg: 'Server error' });
   }
 });
 
 // PUT /api/user/profile (update user profile)
 router.put('/profile', auth, profileUpload.single('profilePicture'), async (req, res) => {
-  console.log('🟢 PUT /api/user/profile called');
+  
   try {
     const { 
       firstName, 
@@ -150,7 +150,7 @@ router.put('/profile', auth, profileUpload.single('profilePicture'), async (req,
       }
     });
   } catch (err) {
-    console.error('❌ Error in /profile:', err);
+    
     res.status(500).json({ msg: 'Server error' });
   }
 });
@@ -187,9 +187,9 @@ router.get('/channel/:handle', async (req, res) => {
       visibility: { $in: ['public', 'unlisted'] }
     }).select('-filePath');
 
-    console.log('🌟 Channel endpoint - Featured video query result:');
-    console.log('  - User ID:', user._id);
-    console.log('  - Featured video found:', !!featuredVideo);
+    
+    
+    
     if (featuredVideo) {
       console.log('  - Featured video details:', {
         id: featuredVideo._id,
@@ -201,9 +201,9 @@ router.get('/channel/:handle', async (req, res) => {
 
     // Also check all videos by this user to see their featured status
     const allUserVideos = await Video.find({ uploader: user._id }).select('title isFeatured visibility');
-    console.log('🔍 All videos by this user:');
+    
     allUserVideos.forEach(v => {
-      console.log(`  - ${v.title}: isFeatured=${v.isFeatured}, visibility=${v.visibility}`);
+      
     });
 
     // Update channel video count
@@ -223,7 +223,7 @@ router.get('/channel/:handle', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching channel:', error);
+    
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });

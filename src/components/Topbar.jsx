@@ -6,23 +6,97 @@ import { useSidebar } from '../context/SidebarContext';
 export default function Topbar({ user, setUser }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const { toggleSidebar } = useSidebar();
   
   const dropdownRef = useRef(null);
   const notificationsRef = useRef(null);
+  const searchRef = useRef(null);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+  // Fetch search suggestions
+  const fetchSuggestions = async (query) => {
+    if (!query.trim() || query.length < 2) {
+      setSearchSuggestions([]);
+      return;
     }
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/videos/search?q=${encodeURIComponent(query)}&limit=5`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+      
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        // Create suggestions from video titles
+        const suggestions = result.data.map(video => video.title).slice(0, 5);
+        setSearchSuggestions(suggestions);
+      }
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+      setSearchSuggestions([]);
+    }
+  };
+
+  // Debounce search suggestions
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery && showSuggestions) {
+        fetchSuggestions(searchQuery);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, showSuggestions]);
+
+  const handleSearch = (e, searchTerm = null) => {
+    e?.preventDefault();
+    const query = searchTerm || searchQuery.trim();
+    if (query) {
+      navigate(`/search?q=${encodeURIComponent(query)}`);
+      setShowSuggestions(false);
+      setSearchQuery(query);
+    }
+  };
+
+  const handleSearchInputChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    setShowSuggestions(value.length > 0);
+  };
+
+  const handleSearchInputFocus = () => {
+    if (searchQuery.length > 0) {
+      setShowSuggestions(true);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    setSearchQuery(suggestion);
+    setShowSuggestions(false);
+    navigate(`/search?q=${encodeURIComponent(suggestion)}`);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setSearchSuggestions([]);
+    setShowSuggestions(false);
   };
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       handleSearch(e);
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
     }
   };
 
@@ -79,6 +153,9 @@ export default function Topbar({ user, setUser }) {
       if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
         setIsNotificationsOpen(false);
       }
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -103,28 +180,61 @@ export default function Topbar({ user, setUser }) {
       </div>
 
       <div className="topbar-center">
-        <form className="search-form" onSubmit={handleSearch}>
-          <input
-            type="text"
-            placeholder="Search"
-            className="search-input"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={handleKeyPress}
-          />
-          <button className="search-button" type="submit">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12.5 11H11.71L11.43 10.73C12.41 9.59 13 8.11 13 6.5C13 2.91 10.09 0 6.5 0C2.91 0 0 2.91 0 6.5C0 10.09 2.91 13 6.5 13C8.11 13 9.59 12.41 10.73 11.43L11 11.71V12.5L16 17.49L17.49 16L12.5 11ZM6.5 11C4.01 11 2 8.99 2 6.5C2 4.01 4.01 2 6.5 2C8.99 2 11 4.01 11 6.5C11 8.99 8.99 11 6.5 11Z" fill="#606060"/>
-            </svg>
-          </button>
-          <button className="voice-search-button" type="button">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 14C13.6569 14 15 12.6569 15 11V5C15 3.34315 13.6569 2 12 2C10.3431 2 9 3.34315 9 5V11C9 12.6569 10.3431 14 12 14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M19 11V11.5C19 15.6421 15.6421 19 11.5 19C7.35786 19 4 15.6421 4 11.5V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M12 19V22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-        </form>
+        <div className="search-container" ref={searchRef}>
+          <form className="search-form" onSubmit={handleSearch}>
+            <input
+              type="text"
+              placeholder="Search"
+              className="search-input"
+              value={searchQuery}
+              onChange={handleSearchInputChange}
+              onFocus={handleSearchInputFocus}
+              onKeyPress={handleKeyPress}
+            />
+            {searchQuery && (
+              <button 
+                type="button" 
+                className="clear-search-button"
+                onClick={clearSearch}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            )}
+            <button className="search-button" type="submit">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12.5 11H11.71L11.43 10.73C12.41 9.59 13 8.11 13 6.5C13 2.91 10.09 0 6.5 0C2.91 0 0 2.91 0 6.5C0 10.09 2.91 13 6.5 13C8.11 13 9.59 12.41 10.73 11.43L11 11.71V12.5L16 17.49L17.49 16L12.5 11ZM6.5 11C4.01 11 2 8.99 2 6.5C2 4.01 4.01 2 6.5 2C8.99 2 11 4.01 11 6.5C11 8.99 8.99 11 6.5 11Z" fill="#606060"/>
+              </svg>
+            </button>
+          </form>
+          
+          {showSuggestions && searchSuggestions.length > 0 && (
+            <div className="search-suggestions">
+              {searchSuggestions.map((suggestion, index) => (
+                <div 
+                  key={index}
+                  className="search-suggestion-item"
+                  onClick={() => handleSuggestionClick(suggestion)}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M11 6.5C11 8.99 8.99 11 6.5 11C4.01 11 2 8.99 2 6.5C2 4.01 4.01 2 6.5 2C8.99 2 11 4.01 11 6.5Z" stroke="currentColor" strokeWidth="1.5"/>
+                    <path d="M16 15.5L11 10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                  <span>{suggestion}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        <button className="voice-search-button" type="button">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 14C13.6569 14 15 12.6569 15 11V5C15 3.34315 13.6569 2 12 2C10.3431 2 9 3.34315 9 5V11C9 12.6569 10.3431 14 12 14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M19 11V11.5C19 15.6421 15.6421 19 11.5 19C7.35786 19 4 15.6421 4 11.5V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M12 19V22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
       </div>
 
       <div className="topbar-right">

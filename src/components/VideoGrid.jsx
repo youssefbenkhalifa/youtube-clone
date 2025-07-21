@@ -44,7 +44,7 @@ export default function VideoGrid() {
           setError('Failed to fetch videos');
         }
       } catch (err) {
-        console.error('Error fetching videos:', err);
+
         setError('Error loading videos');
       } finally {
         setLoading(false);

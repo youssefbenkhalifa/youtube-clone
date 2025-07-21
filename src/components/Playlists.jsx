@@ -52,7 +52,7 @@ export default function Playlists({ user }) {
           setError(data.message || 'Failed to fetch playlists');
         }
       } catch (error) {
-        console.error('Error fetching playlists:', error);
+
         setError('Failed to fetch playlists');
       } finally {
         setLoading(false);

@@ -34,18 +34,18 @@ export default function ChannelAnalytics({ user }) {
       }
 
       try {
-        console.log('Fetching analytics for days:', dateRange);
+
         const response = await fetch(`http://localhost:5000/api/analytics/channel?days=${dateRange}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
 
-        console.log('Analytics response status:', response.status);
+
         
         if (!response.ok) {
           // If analytics endpoint doesn't exist, use mock data
-          console.warn('Analytics endpoint not available, using mock data');
+
           setAnalytics({
             views: 0,
             watchTime: 0,
@@ -57,7 +57,7 @@ export default function ChannelAnalytics({ user }) {
         }
 
         const data = await response.json();
-        console.log('Analytics data:', data);
+
         
         if (data.success) {
           setAnalytics(data.analytics);
@@ -65,7 +65,7 @@ export default function ChannelAnalytics({ user }) {
           setError(data.message || 'Failed to fetch analytics');
         }
       } catch (error) {
-        console.error('Error fetching analytics:', error);
+
         // Use mock data as fallback
         setAnalytics({
           views: 0,

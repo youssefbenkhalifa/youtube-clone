@@ -27,7 +27,7 @@ const ChannelSelector = ({ onChannelSelect, selectedChannelId }) => {
           setError(data.message);
         }
       } catch (err) {
-        console.error('Error fetching channels:', err);
+
         setError('Failed to load channels');
       } finally {
         setLoading(false);

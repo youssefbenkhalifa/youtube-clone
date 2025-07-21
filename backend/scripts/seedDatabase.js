@@ -103,7 +103,7 @@ function generateVideoDuration() {
 }
 
 async function createRandomUsers(count = 25) {
-  console.log(`Creating ${count} random users...`);
+  
   const users = [];
   
   for (let i = 0; i < count; i++) {
@@ -147,16 +147,16 @@ async function createRandomUsers(count = 25) {
   
   try {
     const createdUsers = await User.insertMany(users);
-    console.log(`✅ Created ${createdUsers.length} users successfully`);
+    
     return createdUsers;
   } catch (error) {
-    console.error('❌ Error creating users:', error);
+    
     return [];
   }
 }
 
 async function createRandomVideos(users, videosPerUser = 5) {
-  console.log(`Creating ${videosPerUser} videos per user...`);
+  
   const videos = [];
   
   for (const user of users) {
@@ -191,7 +191,7 @@ async function createRandomVideos(users, videosPerUser = 5) {
   
   try {
     const createdVideos = await Video.insertMany(videos);
-    console.log(`✅ Created ${createdVideos.length} videos successfully`);
+    
     
     // Update user video counts and total views
     for (const user of users) {
@@ -207,35 +207,35 @@ async function createRandomVideos(users, videosPerUser = 5) {
       });
     }
     
-    console.log('✅ Updated user video counts and total views');
+    
     return createdVideos;
   } catch (error) {
-    console.error('❌ Error creating videos:', error);
+    
     return [];
   }
 }
 
 async function clearDatabase() {
-  console.log('🧹 Clearing existing data...');
+  
   try {
     await User.deleteMany({});
     await Video.deleteMany({});
-    console.log('✅ Database cleared successfully');
+    
   } catch (error) {
-    console.error('❌ Error clearing database:', error);
+    
   }
 }
 
 async function seedDatabase(customUserCount = 25, customVideosPerUser = 8) {
   try {
-    console.log('🌱 Starting database seeding...');
+    
     
     // Connect to MongoDB
     await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true
     });
-    console.log('✅ Connected to MongoDB');
+    
     
     // Clear existing data
     await clearDatabase();
@@ -248,18 +248,18 @@ async function seedDatabase(customUserCount = 25, customVideosPerUser = 8) {
       await createRandomVideos(users, customVideosPerUser);
     }
     
-    console.log('🎉 Database seeding completed successfully!');
-    console.log(`📊 Summary:`);
-    console.log(`   - Users created: ${users.length}`);
-    console.log(`   - Videos created: ${users.length * customVideosPerUser}`);
-    console.log(`   - Channels created: ${users.length}`);
+    
+    
+    
+    
+    
     
   } catch (error) {
-    console.error('❌ Error seeding database:', error);
+    
   } finally {
     // Close connection
     await mongoose.connection.close();
-    console.log('📴 Database connection closed');
+    
     process.exit(0);
   }
 }
@@ -275,10 +275,8 @@ if (shouldClear) {
   mongoose.connect(process.env.MONGO_URI)
     .then(clearDatabase)
     .then(() => {
-      console.log('Database cleared only');
       process.exit(0);
-    })
-    .catch(console.error);
+    });
 } else {
   // Run full seeding with custom parameters
   seedDatabase(userCount, videosPerUser);

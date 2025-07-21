@@ -92,8 +92,8 @@ export default function Channel({ onHomeClick, onChannelClick, onVideoClick, use
           headers
         });
 
-        console.log('Response status:', response.status);
-        console.log('Response headers:', response.headers);
+
+
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -102,21 +102,21 @@ export default function Channel({ onHomeClick, onChannelClick, onVideoClick, use
         const data = await response.json();
 
         if (data.success) {
-          console.log('🔍 Channel data received:', data.data); // Debug log
+// Debug log
           setChannelData(data.data);
           setSubscriberCount(data.data.channel?.subscriberCount || 0);
           
           // Check subscription status if user is logged in
           const token = localStorage.getItem('token') || sessionStorage.getItem('token');
           if (token && data.data.id) {
-            console.log('🔍 Checking subscription for channel ID:', data.data.id); // Debug log
+// Debug log
             checkSubscriptionStatus(data.data.id);
           }
         } else {
           setError(data.message || 'Channel information not available');
         }
       } catch (err) {
-        console.error('Error fetching channel data:', err);
+
         setError('Failed to load channel information');
       } finally {
         setLoading(false);
@@ -142,14 +142,14 @@ export default function Channel({ onHomeClick, onChannelClick, onVideoClick, use
         setSubscriberCount(data.subscriberCount);
       }
     } catch (error) {
-      console.error('Error checking subscription status:', error);
+
     }
   };
 
   // Handle subscription toggle
   const handleSubscribe = async () => {
     if (!channelData || !channelData.id) {
-      console.error('❌ No channel data or ID available:', channelData);
+
       alert('Channel information not available');
       return;
     }
@@ -160,7 +160,7 @@ export default function Channel({ onHomeClick, onChannelClick, onVideoClick, use
       return;
     }
 
-    console.log('🔍 Subscribing to channel ID:', channelData.id); // Debug log
+// Debug log
     setSubscriptionLoading(true);
     
     try {
@@ -181,7 +181,7 @@ export default function Channel({ onHomeClick, onChannelClick, onVideoClick, use
         alert(data.message || 'Failed to update subscription');
       }
     } catch (error) {
-      console.error('Error updating subscription:', error);
+
       alert('Failed to update subscription');
     } finally {
       setSubscriptionLoading(false);
@@ -285,10 +285,6 @@ export default function Channel({ onHomeClick, onChannelClick, onVideoClick, use
       <div className="channel-content">
         {activeTab === 'Home' && (
           <div className="channel-home">
-            {/* Debug logging */}
-            {console.log('🔍 Channel Data:', channelData)}
-            {console.log('🌟 Featured Video:', channelData?.featuredVideo)}
-            {console.log('📹 All Videos:', channelData?.videos)}
             
             {/* Featured Video Section */}
             {channelData.featuredVideo ? (

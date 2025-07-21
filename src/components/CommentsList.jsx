@@ -49,7 +49,7 @@ function Comment({ comment, videoId, onReplyAdded, depth = 0, user }) {
         setDislikeCount(data.dislikeCount);
       }
     } catch (error) {
-      console.error('Error liking comment:', error);
+
     }
   };
 
@@ -77,7 +77,7 @@ function Comment({ comment, videoId, onReplyAdded, depth = 0, user }) {
         setDislikeCount(data.dislikeCount);
       }
     } catch (error) {
-      console.error('Error disliking comment:', error);
+
     }
   };
 
@@ -114,7 +114,7 @@ function Comment({ comment, videoId, onReplyAdded, depth = 0, user }) {
         alert(data.message || 'Failed to add reply');
       }
     } catch (error) {
-      console.error('Error adding reply:', error);
+
       alert('Failed to add reply');
     } finally {
       setSubmittingReply(false);
@@ -129,7 +129,7 @@ function Comment({ comment, videoId, onReplyAdded, depth = 0, user }) {
         setReplies(data.replies);
       }
     } catch (error) {
-      console.error('Error fetching replies:', error);
+
     }
   };
 
