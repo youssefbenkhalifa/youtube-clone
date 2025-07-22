@@ -75,7 +75,7 @@ export default function Subscriptions() {
         setError(data.message || 'Failed to fetch subscription feed');
       }
     } catch (err) {
-      console.error('Error fetching subscription feed:', err);
+
       setError('Failed to load subscription feed');
     } finally {
       setLoading(false);

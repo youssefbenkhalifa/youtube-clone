@@ -46,7 +46,7 @@ export default function History() {
         setError(data.message || 'Failed to fetch watch history');
       }
     } catch (err) {
-      console.error('Error fetching watch history:', err);
+
       setError('Failed to load watch history');
     } finally {
       setLoading(false);
@@ -79,10 +79,10 @@ export default function History() {
         // Refresh the history after removal
         fetchWatchHistory(pagination.currentPage);
       } else {
-        console.error('Failed to remove video from history');
+
       }
     } catch (err) {
-      console.error('Error removing video from history:', err);
+
     }
   };
 
@@ -112,10 +112,10 @@ export default function History() {
           hasPrevPage: false
         });
       } else {
-        console.error('Failed to clear watch history');
+
       }
     } catch (err) {
-      console.error('Error clearing watch history:', err);
+
     }
   };
 

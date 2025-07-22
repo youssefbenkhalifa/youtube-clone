@@ -60,7 +60,7 @@ export default function Trending({ onChannelClick, onVideoClick }) {
     const fetchTrendingVideos = async () => {
       try {
         setLoading(true);
-        console.log('📈 Fetching trending videos...');
+
         
         const params = new URLSearchParams({
           timeframe,
@@ -76,7 +76,7 @@ export default function Trending({ onChannelClick, onVideoClick }) {
         
         const data = await response.json();
         
-        console.log('📊 Trending videos response:', data);
+
         
         if (data.success) {
           setTrendingVideos(data.data);
@@ -92,12 +92,12 @@ export default function Trending({ onChannelClick, onVideoClick }) {
               }
             } else {
               // No videos found but database is connected
-              setError('📈 No trending videos found. Upload and watch videos to see them trending!');
+              setError('No trending videos found. Upload and watch videos to see them trending!');
             }
           } else {
             // We have videos!
             if (data.meta?.isFallback) {
-              setError('📺 Showing recent videos (no videos with views found yet).');
+              setError('Showing recent videos (no videos with views found yet).');
             } else {
               setError(null); // Clear error when we have real trending videos
             }
@@ -106,7 +106,7 @@ export default function Trending({ onChannelClick, onVideoClick }) {
           setError(data.message || 'Failed to fetch trending videos');
         }
       } catch (err) {
-        console.error('Error fetching trending videos:', err);
+
         if (err.message.includes('Failed to fetch') || err.message.includes('ERR_CONNECTION_REFUSED') || err.message.includes('fetch')) {
           setError('Unable to connect to server. Please make sure the backend is running on port 5000.');
         } else if (err.message.includes('500')) {

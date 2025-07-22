@@ -13,7 +13,7 @@ module.exports = function (req, res, next) {
     req.user = decoded; // decoded contains user id
     next();
   } catch (err) {
-    console.error('❌ Invalid token:', err.message);
+    
     res.status(401).json({ msg: 'Token is not valid' });
   }
 };

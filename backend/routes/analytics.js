@@ -14,7 +14,7 @@ router.get('/test', (req, res) => {
 // @access  Private
 router.get('/channel', auth, async (req, res) => {
   try {
-    console.log('Analytics route hit, user:', req.user?.id);
+    
     const { days = 28 } = req.query;
     const userId = req.user.id;
 
@@ -32,7 +32,7 @@ router.get('/channel', auth, async (req, res) => {
       createdAt: { $gte: startDate, $lte: endDate }
     });
 
-    console.log('Total videos:', allUserVideos.length, 'Recent videos:', recentVideos.length);
+    
 
     // Calculate total metrics from all videos
     const totalViews = allUserVideos.reduce((sum, video) => sum + (video.views || 0), 0);
@@ -161,7 +161,7 @@ router.get('/channel', auth, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching analytics:', error);
+    
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 });
@@ -198,7 +198,7 @@ router.get('/realtime', auth, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching realtime analytics:', error);
+    
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });

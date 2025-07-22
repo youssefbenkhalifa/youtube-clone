@@ -41,7 +41,7 @@ export default function Playlist({ user }) {
           setError(data.message || 'Playlist not found');
         }
       } catch (error) {
-        console.error('Error fetching playlist:', error);
+
         setError('Failed to fetch playlist');
       } finally {
         setLoading(false);
@@ -76,7 +76,7 @@ export default function Playlist({ user }) {
         alert(data.message || 'Failed to remove video from playlist');
       }
     } catch (error) {
-      console.error('Error removing video from playlist:', error);
+
       alert('Failed to remove video from playlist');
     }
   };

@@ -112,7 +112,26 @@ const UserSchema = new mongoose.Schema(
         type: Number, // percentage watched (0-100)
         default: 0
       }
-    }]
+    }],
+    
+    // Account status and moderation
+    status: {
+      type: String,
+      enum: ['active', 'suspended', 'banned'],
+      default: 'active'
+    },
+    suspensionReason: {
+      type: String
+    },
+    suspendedAt: {
+      type: Date
+    },
+    suspensionDuration: {
+      type: String // e.g., '7 days', 'permanent', '30 days'
+    },
+    suspendedBy: {
+      type: String // admin ID who suspended the account
+    }
   },
   { timestamps: true }
 );

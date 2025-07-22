@@ -51,7 +51,7 @@ router.get('/me', auth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching user channel:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Server error'
@@ -118,7 +118,7 @@ router.get('/handle/:handle', optionalAuth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching channel by handle:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Server error'
@@ -185,7 +185,7 @@ router.get('/:channelName', optionalAuth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching channel:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Server error'
@@ -220,7 +220,7 @@ router.get('/user/channels', auth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching user channels:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Server error'
@@ -278,7 +278,7 @@ router.post('/create', auth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error creating channel:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Server error'
@@ -323,7 +323,7 @@ router.put('/:channelId', auth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error updating channel:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Server error'
@@ -371,7 +371,7 @@ router.delete('/:channelId', auth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error deleting channel:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Server error'

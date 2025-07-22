@@ -218,3 +218,26 @@
     gap: 0;
   }
 }
+
+/* Admin hint styling */
+.admin-hint {
+  margin: 15px 0;
+  padding: 12px;
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  border-left: 4px solid #ff9800;
+  border-radius: 6px;
+  text-align: left;
+}
+
+.hint-text {
+  margin: 0;
+  font-size: 13px;
+  color: #e65100;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hint-text strong {
+  color: #bf360c;
+}

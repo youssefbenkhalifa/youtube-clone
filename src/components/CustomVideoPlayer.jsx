@@ -96,7 +96,7 @@ const CustomVideoPlayer = ({ src, poster, title, onTheaterMode }) => {
 
   // Toggle theater mode
   const toggleTheaterMode = useCallback(() => {
-    console.log('Theater mode toggled:', !isTheaterMode);
+
     setIsTheaterMode(!isTheaterMode);
     if (onTheaterMode) {
       onTheaterMode(!isTheaterMode);
@@ -116,7 +116,7 @@ const CustomVideoPlayer = ({ src, poster, title, onTheaterMode }) => {
         setIsPictureInPicture(true);
       }
     } catch (error) {
-      console.error('Picture-in-picture error:', error);
+
     }
   }, []);
 
@@ -131,16 +131,16 @@ const CustomVideoPlayer = ({ src, poster, title, onTheaterMode }) => {
 
   // Show/hide controls
   const showControlsTemporarily = () => {
-    console.log('showControlsTemporarily called, buttonClickRef:', buttonClickRef.current);
+
     // Don't override button click timeout
     if (buttonClickRef.current) {
-      console.log('Ignoring mouse movement, button was recently clicked');
+
       return;
     }
     setShowControls(true);
     clearTimeout(controlsTimeoutRef.current);
     controlsTimeoutRef.current = setTimeout(() => {
-      console.log('Auto-hide timeout from mouse movement');
+
       if (isPlaying && !buttonClickRef.current) {
         setShowControls(false);
       }
@@ -150,7 +150,7 @@ const CustomVideoPlayer = ({ src, poster, title, onTheaterMode }) => {
   // Handle control button clicks - keep controls visible longer
   const handleControlButtonClick = (callback) => {
     return (e) => {
-      console.log('Control button clicked, preventing auto-hide');
+
       e.stopPropagation();
       buttonClickRef.current = true;
       setShowControls(true);
@@ -158,7 +158,7 @@ const CustomVideoPlayer = ({ src, poster, title, onTheaterMode }) => {
       if (callback) callback();
       // Keep controls visible for 5 seconds after button click
       controlsTimeoutRef.current = setTimeout(() => {
-        console.log('Auto-hide timeout triggered after button click');
+
         buttonClickRef.current = false;
         if (isPlaying) {
           setShowControls(false);

@@ -3,8 +3,8 @@ import { createPortal } from 'react-dom';
 import './PlaylistModal.css';
 
 export default function PlaylistModal({ isOpen, onClose, videoId, user }) {
-  console.log('PlaylistModal props:', { isOpen, onClose, videoId, user });
-  console.log('Modal should render:', isOpen);
+
+
   
   const [playlists, setPlaylists] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -28,7 +28,7 @@ export default function PlaylistModal({ isOpen, onClose, videoId, user }) {
         setPlaylists(data.playlists);
       }
     } catch (error) {
-      console.error('Error fetching playlists:', error);
+
     }
   }, []);
 
@@ -53,7 +53,7 @@ export default function PlaylistModal({ isOpen, onClose, videoId, user }) {
         setPlaylistStatus(status);
       }
     } catch (error) {
-      console.error('Error checking video status:', error);
+
     }
   }, [videoId]);
 
@@ -81,7 +81,7 @@ export default function PlaylistModal({ isOpen, onClose, videoId, user }) {
         setIsInWatchLater(data.isInWatchLater);
       }
     } catch (error) {
-      console.error('Error toggling watch later:', error);
+
     } finally {
       setLoading(false);
     }
@@ -112,7 +112,7 @@ export default function PlaylistModal({ isOpen, onClose, videoId, user }) {
         }));
       }
     } catch (error) {
-      console.error('Error toggling playlist:', error);
+
     } finally {
       setLoading(false);
     }
@@ -145,18 +145,18 @@ export default function PlaylistModal({ isOpen, onClose, videoId, user }) {
         fetchPlaylists();
       }
     } catch (error) {
-      console.error('Error creating playlist:', error);
+
     } finally {
       setCreating(false);
     }
   };
 
   if (!isOpen) {
-    console.log('Modal not rendering - isOpen is false');
+
     return null;
   }
 
-  console.log('Modal IS rendering - isOpen is true');
+
 
   const modalContent = (
     <div className="playlist-modal-overlay" onClick={onClose}>

@@ -35,7 +35,7 @@ router.get('/my', auth, async (req, res) => {
       playlists: filteredPlaylists
     });
   } catch (error) {
-    console.error('Error fetching user playlists:', error);
+    
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
@@ -82,7 +82,7 @@ router.get('/my-playlists', auth, async (req, res) => {
       playlists: enhancedPlaylists
     });
   } catch (error) {
-    console.error('Error fetching user playlists:', error);
+    
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
@@ -131,7 +131,7 @@ router.get('/watch-later', auth, async (req, res) => {
       playlist: watchLater
     });
   } catch (error) {
-    console.error('Error fetching watch later:', error);
+    
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
@@ -166,7 +166,7 @@ router.post('/', auth, async (req, res) => {
       playlist
     });
   } catch (error) {
-    console.error('Error creating playlist:', error);
+    
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
@@ -225,7 +225,7 @@ router.post('/:playlistId/videos/:videoId', auth, async (req, res) => {
       message: 'Video added to playlist successfully'
     });
   } catch (error) {
-    console.error('Error adding video to playlist:', error);
+    
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
@@ -293,7 +293,7 @@ router.post('/watch-later/:videoId', auth, async (req, res) => {
       isAdded
     });
   } catch (error) {
-    console.error('Error toggling watch later:', error);
+    
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
@@ -337,7 +337,7 @@ router.delete('/:playlistId/videos/:videoId', auth, async (req, res) => {
       message: 'Video removed from playlist successfully'
     });
   } catch (error) {
-    console.error('Error removing video from playlist:', error);
+    
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
@@ -385,7 +385,7 @@ router.get('/:playlistId', async (req, res) => {
       playlist
     });
   } catch (error) {
-    console.error('Error fetching playlist:', error);
+    
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
@@ -431,7 +431,7 @@ router.put('/:playlistId', auth, async (req, res) => {
       playlist
     });
   } catch (error) {
-    console.error('Error updating playlist:', error);
+    
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
@@ -470,7 +470,7 @@ router.delete('/:playlistId', auth, async (req, res) => {
       message: 'Playlist deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting playlist:', error);
+    
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
@@ -501,7 +501,7 @@ router.get('/video/:videoId/status', auth, async (req, res) => {
       playlists: playlistStatus
     });
   } catch (error) {
-    console.error('Error checking playlist status:', error);
+    
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });

@@ -13,6 +13,41 @@ export default function Login({ setUser }) {
     e.preventDefault();
     setError('');
     try {
+      // First try admin authentication if using admin credentials
+      if (email === 'admin@youtube-clone.com' || email === 'admin') {
+        try {
+          const adminRes = await fetch('http://localhost:5000/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              username: email === 'admin@youtube-clone.com' ? 'admin' : email, 
+              password 
+            }),
+          });
+          
+          if (adminRes.ok) {
+            const adminData = await adminRes.json();
+            
+            // Store admin token
+            if (remember) {
+              localStorage.setItem('adminToken', adminData.token);
+              localStorage.setItem('adminRememberMe', 'true');
+            } else {
+              sessionStorage.setItem('adminToken', adminData.token);
+              localStorage.removeItem('adminRememberMe');
+            }
+            
+            // Redirect to admin dashboard
+            navigate('/admin/dashboard');
+            return;
+          }
+        } catch (adminError) {
+          // If admin login fails, continue to regular user login
+          console.log('Admin login failed, trying user login');
+        }
+      }
+
+      // Regular user authentication
       const res = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -43,8 +78,8 @@ export default function Login({ setUser }) {
       <h2>Login</h2>
       <form onSubmit={handleSubmit}>
         <input
-          type="email"
-          placeholder="Email"
+          type="text"
+          placeholder="Email or Username"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -69,6 +104,9 @@ export default function Login({ setUser }) {
         <button type="submit">Login</button>
       </form>
       {error && <p className="error">{error}</p>}
+      
+  
+      
       <p>
         Don't have an account?{' '}
         <Link to="/signup">Sign Up</Link>

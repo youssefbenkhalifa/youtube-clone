@@ -87,7 +87,7 @@ export default function VideoWatch({ user }) {
         }
       }
     } catch (error) {
-      console.error('Error fetching playlists:', error);
+
     } finally {
       setPlaylistsLoading(false);
     }
@@ -114,7 +114,7 @@ export default function VideoWatch({ user }) {
         alert(data.message || 'Failed to update Watch Later');
       }
     } catch (error) {
-      console.error('Error toggling watch later:', error);
+
       alert('Failed to update Watch Later');
     }
   };
@@ -144,7 +144,7 @@ export default function VideoWatch({ user }) {
         alert(data.message || 'Failed to update playlist');
       }
     } catch (error) {
-      console.error('Error updating playlist:', error);
+
       alert('Failed to update playlist');
     }
   };
@@ -190,7 +190,7 @@ export default function VideoWatch({ user }) {
         alert(data.message || 'Failed to create playlist');
       }
     } catch (error) {
-      console.error('Error creating playlist:', error);
+
       alert('Failed to create playlist');
     }
   };
@@ -209,7 +209,7 @@ export default function VideoWatch({ user }) {
         setCommentCount(data.data.commentsCount || 0);
       }
     } catch (err) {
-      console.error('Failed to update comment count:', err);
+
     }
   };
 
@@ -260,7 +260,7 @@ export default function VideoWatch({ user }) {
           setVideo(prev => ({ ...prev, views: data.views }));
         }
       } catch (err) {
-        console.error('Failed to update views:', err);
+
       }
     }
     updateViews();
@@ -284,7 +284,7 @@ export default function VideoWatch({ user }) {
           })
         });
       } catch (err) {
-        console.error('Failed to add to watch history:', err);
+
       }
     }
     addToWatchHistory();
@@ -321,7 +321,7 @@ export default function VideoWatch({ user }) {
 
   const handleSubscribe = async () => {
     if (!video || !video.uploader || !video.uploader._id) {
-      console.error('No uploader information available');
+
       return;
     }
     
@@ -351,7 +351,7 @@ export default function VideoWatch({ user }) {
         alert(data.message || 'Failed to update subscription');
       }
     } catch (error) {
-      console.error('Error updating subscription:', error);
+
       alert('Failed to update subscription');
     } finally {
       setSubscriptionLoading(false);
@@ -454,7 +454,7 @@ export default function VideoWatch({ user }) {
         alert(data.message || 'Failed to submit report');
       }
     } catch (error) {
-      console.error('Error submitting report:', error);
+
       alert('Failed to submit report');
     }
   };

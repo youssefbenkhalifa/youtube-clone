@@ -51,7 +51,7 @@ export default function WatchLater({ user }) {
           setError(data.message || 'Failed to fetch Watch Later videos');
         }
       } catch (err) {
-        console.error('Error fetching Watch Later videos:', err);
+
         setError('Failed to load Watch Later videos');
       } finally {
         setLoading(false);
@@ -79,7 +79,7 @@ export default function WatchLater({ user }) {
         alert(data.message || 'Failed to remove from Watch Later');
       }
     } catch (error) {
-      console.error('Error removing from Watch Later:', error);
+
       alert('Failed to remove from Watch Later');
     }
   };

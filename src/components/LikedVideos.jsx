@@ -46,7 +46,7 @@ export default function LikedVideos() {
         setError(data.message || 'Failed to fetch liked videos');
       }
     } catch (err) {
-      console.error('Error fetching liked videos:', err);
+
       setError('Failed to load liked videos');
     } finally {
       setLoading(false);
